@@ -17,3 +17,7 @@ El mínimo de 30 sesiones por hoja mejora la referencia: log loss 0,033878 frent
 ### Revisión tras 10 experimentos
 
 Mejor: run_008, 150 árboles, learning_rate=0,05, 31 hojas, mínimo 30 sesiones, L2=1. Log loss 0,033772 y Brier 0,010469. 75 árboles empeoran; 225 y 300 tampoco superan 150. L2=5 mejora Brier ligeramente, pero empeora log loss; sin L2 también empeora. Próxima etapa: menor learning rate con cantidad de árboles ajustada y muestreo, sin early stopping.
+
+### Revisión tras 15 experimentos
+
+Reducir learning_rate a 0,025 y usar 300 árboles mejora ambas métricas frente a 0,05/150. 0,015/500 no aporta mejora. Muestrear features al 80% no mejora; muestrear filas al 60% cada iteración da el mejor log loss (run_015: 0,033508; Brier 0,010396). Estas son diferencias exploratorias en una única validación, no pruebas de superioridad estadística. Próxima etapa: complejidad y número de árboles alrededor del candidato, y confirmación de reproducibilidad.
