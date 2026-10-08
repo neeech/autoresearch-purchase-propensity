@@ -5,12 +5,12 @@
   "budget_minutes": 60,
   "threads": 4,
   "seed": 42,
-  "hypothesis": "M\u00e1s hojas pueden capturar interacciones que 15 hojas no aprovechan; comparar 63 contra la referencia de 31.",
+  "hypothesis": "63 hojas empeoran; exigir 300 sesiones por hoja puede regularizar las hojas raras manteniendo 31 hojas.",
   "params": {
     "n_estimators": 300,
     "learning_rate": 0.05,
-    "num_leaves": 63,
-    "min_child_samples": 100,
+    "num_leaves": 31,
+    "min_child_samples": 300,
     "reg_lambda": 1
   }
 }
