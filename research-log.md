@@ -17,3 +17,4 @@
 - run_017: {'status': 'ok', 'log_loss': 0.03350780560782618, 'brier': 0.010379286646765297, 'seconds': 5.536819219589233, 'trees': 300, 'decision': 'keep', 'protocol_commit': 'b1510f595c6c9d1a3fc70051652dea8b6c363875'}
 - run_018: {'status': 'ok', 'log_loss': 0.033764838710009105, 'brier': 0.010437898658379907, 'seconds': 9.89154577255249, 'trees': 450, 'decision': 'discard', 'protocol_commit': '943b737b88da9f6206055498f7ef54e41816a4c9'}
 - run_019: {'status': 'ok', 'log_loss': 0.033508620437924345, 'brier': 0.010384954900339798, 'seconds': 4.107139825820923, 'trees': 225, 'decision': 'discard', 'protocol_commit': '6fc6c3dca3805a09863a53edd2660620fd7b8b03'}
+- run_020: {'status': 'ok', 'log_loss': 0.03350780560782618, 'brier': 0.010379286646765297, 'seconds': 4.00344443321228, 'trees': 300, 'decision': 'discard', 'protocol_commit': '9318565f775be300193059a989423d2c39eb43c6'}

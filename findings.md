@@ -21,3 +21,11 @@ Mejor: run_008, 150 árboles, learning_rate=0,05, 31 hojas, mínimo 30 sesiones,
 ### Revisión tras 15 experimentos
 
 Reducir learning_rate a 0,025 y usar 300 árboles mejora ambas métricas frente a 0,05/150. 0,015/500 no aporta mejora. Muestrear features al 80% no mejora; muestrear filas al 60% cada iteración da el mejor log loss (run_015: 0,033508; Brier 0,010396). Estas son diferencias exploratorias en una única validación, no pruebas de superioridad estadística. Próxima etapa: complejidad y número de árboles alrededor del candidato, y confirmación de reproducibilidad.
+
+### Cierre: 20 entrenamientos (19 configuraciones y una repetición)
+
+Ganador por menor log loss: run_017 (300 árboles, learning_rate=0,025, 47 hojas, mínimo 30 sesiones, L2=1, muestreo de filas=0,6 cada iteración). Log loss 0,033507806 y Brier 0,010379287. run_020 reprodujo exactamente sus probabilidades; recargar el modelo nativo también reproduce las guardadas.
+
+Mejora relativa frente a logística: 10,82% en log loss; Brier baja de 0,011327090 a 0,010379287. Run_015 (31 hojas) está prácticamente empatado en log loss (diferencia 0,000000125); no se puede afirmar superioridad estadística de 47 hojas. 450 árboles empeora; 225 queda casi empatado con 300 en la última región. Estos resultados seleccionan un candidato en mayo, no demuestran rendimiento futuro.
+
+Presupuesto agotado por número de entrenamientos; no se inicia otra ejecución. Junio no fue leído para entrenar ni evaluar. No se hizo calibración, búsqueda de features ni parada temprana. El modelo seleccionado sigue entrenado sólo en enero–abril. Próxima evaluación de junio requiere cerrar previamente cualquier decisión de selección y reentrenamiento.

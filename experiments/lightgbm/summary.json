@@ -1,0 +1,17 @@
+{
+  "baseline_logistic": {
+    "log_loss": 0.037571686301356245,
+    "brier": 0.011327089706546856
+  },
+  "best": {
+    "experiment": "experiments/lightgbm/run_017",
+    "log_loss": 0.03350780560782618,
+    "brier": 0.010379286646765297
+  },
+  "experiments": 20,
+  "unique_configurations": 19,
+  "relative_log_loss_improvement": 0.10816338295104333,
+  "test_evaluated": false,
+  "winner_reproduced": true,
+  "saved_model_verified": true
+}
