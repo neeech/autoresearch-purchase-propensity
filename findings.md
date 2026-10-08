@@ -13,3 +13,7 @@ Pendientes de la primera ejecución.
 ### Revisión tras 5 experimentos
 
 El mínimo de 30 sesiones por hoja mejora la referencia: log loss 0,033878 frente a 0,034000, con 31 hojas y 300 árboles. 63 hojas empeoran; 15 no mejora. Un mínimo de 300 sesiones reduce Brier pero no log loss, por lo que no se promueve. Se conserva el mínimo de 30 como candidato actual. Próxima etapa: regularización L2 y duración del boosting, manteniendo la selección por log loss.
+
+### Revisión tras 10 experimentos
+
+Mejor: run_008, 150 árboles, learning_rate=0,05, 31 hojas, mínimo 30 sesiones, L2=1. Log loss 0,033772 y Brier 0,010469. 75 árboles empeoran; 225 y 300 tampoco superan 150. L2=5 mejora Brier ligeramente, pero empeora log loss; sin L2 también empeora. Próxima etapa: menor learning rate con cantidad de árboles ajustada y muestreo, sin early stopping.
