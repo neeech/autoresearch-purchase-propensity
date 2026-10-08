@@ -5,13 +5,14 @@
   "budget_minutes": 60,
   "threads": 4,
   "seed": 42,
-  "hypothesis": "Muestrear 80% de features por \u00e1rbol puede reducir dependencia de se\u00f1ales correlacionadas y mejorar generalizaci\u00f3n.",
+  "hypothesis": "Muestreo de filas al 80% cada iteraci\u00f3n puede estabilizar \u00e1rboles sin quitar features; activar subsample_freq es necesario para aplicarlo.",
   "params": {
     "n_estimators": 300,
     "learning_rate": 0.025,
     "num_leaves": 31,
     "min_child_samples": 30,
     "reg_lambda": 1,
-    "colsample_bytree": 0.8
+    "subsample": 0.8,
+    "subsample_freq": 1
   }
 }

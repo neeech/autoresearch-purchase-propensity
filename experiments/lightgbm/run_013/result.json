@@ -1,0 +1,9 @@
+{
+  "status": "ok",
+  "log_loss": 0.03362485767221902,
+  "brier": 0.01044167546337033,
+  "seconds": 4.199955463409424,
+  "trees": 300,
+  "decision": "discard",
+  "protocol_commit": "da22a0dfc12d268243b1784afd27b19d64f4b4da"
+}
