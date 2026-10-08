@@ -5,11 +5,11 @@
   "budget_minutes": 60,
   "threads": 4,
   "seed": 42,
-  "hypothesis": "Con muestreo al 60% y menor learning rate, 15 hojas puede regularizar mejor que en el primer bloque de experimentos.",
+  "hypothesis": "15 hojas no mejora con muestreo; 47 permite interacciones adicionales sin llegar a las 63 que fallaron inicialmente.",
   "params": {
     "n_estimators": 300,
     "learning_rate": 0.025,
-    "num_leaves": 15,
+    "num_leaves": 47,
     "min_child_samples": 30,
     "reg_lambda": 1,
     "subsample": 0.6,
