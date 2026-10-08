@@ -5,12 +5,12 @@
   "budget_minutes": 60,
   "threads": 4,
   "seed": 42,
-  "hypothesis": "L2=5 no mejor\u00f3 log loss; retirar L2 prueba si la penalizaci\u00f3n restringe patrones \u00fatiles.",
+  "hypothesis": "Sin early stopping, 150 \u00e1rboles prueba regularizaci\u00f3n por menor cantidad de iteraciones frente a 300.",
   "params": {
-    "n_estimators": 300,
+    "n_estimators": 150,
     "learning_rate": 0.05,
     "num_leaves": 31,
     "min_child_samples": 30,
-    "reg_lambda": 0
+    "reg_lambda": 1
   }
 }
