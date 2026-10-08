@@ -5,6 +5,12 @@
   "budget_minutes": 60,
   "threads": 4,
   "seed": 42,
-  "hypothesis": "Referencia LightGBM con complejidad moderada y sin pesos de clase.",
-  "params": {"n_estimators": 300, "learning_rate": 0.05, "num_leaves": 31, "min_child_samples": 100, "reg_lambda": 1.0}
+  "hypothesis": "Reducir hojas de 31 a 15 puede reducir sobreajuste conservando el resto de la referencia.",
+  "params": {
+    "n_estimators": 300,
+    "learning_rate": 0.05,
+    "num_leaves": 15,
+    "min_child_samples": 100,
+    "reg_lambda": 1.0
+  }
 }
