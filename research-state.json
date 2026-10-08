@@ -2,11 +2,11 @@
   "started": 1791503236.2376213,
   "max_experiments": 20,
   "budget_minutes": 60,
-  "completed": 1,
+  "completed": 2,
   "best": {
     "experiment": "experiments/lightgbm/run_001",
     "log_loss": 0.03400043017729333,
     "brier": 0.010487504850452098
   },
-  "pending": "experiments/lightgbm/run_002"
+  "pending": "experiments/lightgbm/run_003"
 }
