@@ -1,0 +1,16 @@
+{
+  "data_dir": "data/processed",
+  "output_dir": "experiments/lightgbm",
+  "max_experiments": 20,
+  "budget_minutes": 60,
+  "threads": 4,
+  "seed": 42,
+  "hypothesis": "75 \u00e1rboles parece subajustar; 225 explora la regi\u00f3n entre 150 y 300 sin parada temprana.",
+  "params": {
+    "n_estimators": 225,
+    "learning_rate": 0.05,
+    "num_leaves": 31,
+    "min_child_samples": 30,
+    "reg_lambda": 1
+  }
+}

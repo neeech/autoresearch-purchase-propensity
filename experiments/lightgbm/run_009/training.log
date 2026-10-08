@@ -1,0 +1,4 @@
+/home/gry-pho/Desktop/autoresearch-purchase-propensity/src/autoresearch_purchase_propensity/research.py:32: Pandas4Warning: Constructing a Categorical with a dtype and values containing non-null entries not in that dtype's categories is deprecated and will raise in a future version.
+  val[column] = val[column].astype('string').astype(dtype)
+/home/gry-pho/Desktop/autoresearch-purchase-propensity/src/autoresearch_purchase_propensity/research.py:32: Pandas4Warning: Constructing a Categorical with a dtype and values containing non-null entries not in that dtype's categories is deprecated and will raise in a future version.
+  val[column] = val[column].astype('string').astype(dtype)
