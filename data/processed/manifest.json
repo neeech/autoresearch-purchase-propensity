@@ -1,0 +1,78 @@
+{
+  "config": {
+    "raw_path": "data/raw/data.csv",
+    "output_dir": "data/processed",
+    "report_dir": "reports",
+    "validation_start": "2017-05-01",
+    "test_start": "2017-06-01",
+    "missing_transactions_mean_zero": true
+  },
+  "raw_sha256": "55793302dd998c9c2da014df95c83d1e938e16f903590c932a229ad591b024c5",
+  "features": [
+    "visitNumber",
+    "bounces",
+    "hits",
+    "pageviews",
+    "timeOnSite",
+    "source",
+    "channelGrouping",
+    "browser",
+    "deviceCategory",
+    "country",
+    "city",
+    "bounces_missing",
+    "pageviews_missing",
+    "timeOnSite_missing",
+    "history_sessions",
+    "history_purchase_sessions",
+    "has_history",
+    "history_purchase_rate",
+    "history_mean_hits",
+    "history_mean_pageviews",
+    "history_mean_time_on_site",
+    "days_since_last_session",
+    "days_since_last_purchase",
+    "day_of_week",
+    "month",
+    "is_weekend"
+  ],
+  "excluded": [
+    "fullVisitorID",
+    "date",
+    "session_row_id",
+    "target",
+    "transactions",
+    "transactionRevenue"
+  ],
+  "splits": {
+    "train": {
+      "rows": 263943,
+      "positives": 3216,
+      "purchase_rate": 0.012184448915106671,
+      "with_prior_day_history_rate": 0.14897534694990963,
+      "start": "2017-01-01",
+      "end": "2017-04-30"
+    },
+    "validation": {
+      "rows": 65371,
+      "positives": 1115,
+      "purchase_rate": 0.017056492940294626,
+      "with_prior_day_history_rate": 0.18596931361001057,
+      "start": "2017-05-01",
+      "end": "2017-05-31"
+    },
+    "test": {
+      "rows": 63578,
+      "positives": 946,
+      "purchase_rate": 0.014879360785177263,
+      "with_prior_day_history_rate": 0.17405391802195727,
+      "start": "2017-06-01",
+      "end": "2017-06-30"
+    }
+  },
+  "history_policy": "strictly earlier days, updated sequentially across partitions",
+  "target_assumption": "missing transactions means zero",
+  "versions": {
+    "pandas": "3.0.0"
+  }
+}

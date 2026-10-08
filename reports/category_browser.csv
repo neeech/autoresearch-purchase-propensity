@@ -1,0 +1,40 @@
+browser,size,sum,mean
+Chrome,279456,4729,0.016922163059658765
+Safari,61638,367,0.005954119212174308
+Firefox,17834,93,0.005214758326791522
+Internet Explorer,9513,43,0.0045201303479449175
+Android Webview,6225,3,0.00048192771084337347
+Edge,4976,30,0.006028938906752411
+Safari (in-app),4199,9,0.0021433674684448677
+Opera Mini,3075,0,0.0
+Opera,2037,3,0.0014727540500736377
+UC Browser,1390,0,0.0
+YaBrowser,965,0,0.0
+Coc Coc,346,0,0.0
+Amazon Silk,274,0,0.0
+Android Browser,249,0,0.0
+Mozilla Compatible Agent,197,0,0.0
+Maxthon,112,0,0.0
+MRCHROME,89,0,0.0
+Puffin,80,0,0.0
+BlackBerry,80,0,0.0
+Nintendo Browser,65,0,0.0
+Nokia Browser,34,0,0.0
+Seznam,10,0,0.0
+LYF_LS_4002_12,8,0,0.0
+SeaMonkey,7,0,0.0
+Mozilla,6,0,0.0
+Apple-iPhone7C2,6,0,0.0
+Iron,5,0,0.0
+DASH_JR_3G,3,0,0.0
+,2,0,0.0
+osee2unifiedRelease,2,0,0.0
+Android Runtime,1,0,0.0
+CSM Click,1,0,0.0
+Changa 99695759,1,0,0.0
+DoCoMo,1,0,0.0
+IE with Chrome Frame,1,0,0.0
+M5,1,0,0.0
+Reddit,1,0,0.0
+YE,1,0,0.0
+subjectAgent: NoticiasBoom,1,0,0.0
