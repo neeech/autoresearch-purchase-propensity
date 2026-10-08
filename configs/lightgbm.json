@@ -5,9 +5,9 @@
   "budget_minutes": 60,
   "threads": 4,
   "seed": 42,
-  "hypothesis": "47 hojas pr\u00e1cticamente empata en log loss y mejora Brier; 450 \u00e1rboles prueba si esa regi\u00f3n admite m\u00e1s iteraciones.",
+  "hypothesis": "450 \u00e1rboles empeora; 225 prueba menor n\u00famero de iteraciones en la configuraci\u00f3n con 47 hojas y muestreo.",
   "params": {
-    "n_estimators": 450,
+    "n_estimators": 225,
     "learning_rate": 0.025,
     "num_leaves": 47,
     "min_child_samples": 30,
