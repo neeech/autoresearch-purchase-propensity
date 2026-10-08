@@ -1,0 +1,44 @@
+{
+  "inputs": {
+    "train_metadata.parquet": "a41c479fe85c5f21606316075fe87676426847353f06cafff41bd4f7d1a8c77f",
+    "train_X.parquet": "feafce6ca15e48906ef9a075c7cecc5fcc46c6ed795e9a0b1b73ed35617319eb",
+    "train_y.parquet": "f47265d856fa15d0c3eaf1f6775dca9d3e4acf645b835da37daa681c44a6ac42",
+    "validation_X.parquet": "89054cc71a253392a2c51c3c0ae7f1c0d257e7895e23fbc270191498540b6074",
+    "validation_y.parquet": "202e8a7787047cbb982b7791bf9ab0801436ff66d9bc1836302c6aff5e1d864c",
+    "validation_metadata.parquet": "dfd819036bf2669f49a52d4710b044588178906559b7a57970898a7bd7396a48"
+  },
+  "features": [
+    "visitNumber",
+    "bounces",
+    "hits",
+    "pageviews",
+    "timeOnSite",
+    "source",
+    "channelGrouping",
+    "browser",
+    "deviceCategory",
+    "country",
+    "city",
+    "pageviews_missing",
+    "timeOnSite_missing",
+    "history_sessions",
+    "history_purchase_sessions",
+    "has_history",
+    "history_purchase_rate",
+    "history_mean_hits",
+    "history_mean_pageviews",
+    "history_mean_time_on_site",
+    "days_since_last_session",
+    "days_since_last_purchase",
+    "day_of_week",
+    "month",
+    "is_weekend"
+  ],
+  "versions": {
+    "lightgbm": "4.7.0",
+    "pandas": "3.0.6",
+    "numpy": "2.5.3",
+    "sklearn": "1.9.1",
+    "python": "3.13.9 | packaged by Anaconda, Inc. | (main, Oct 21 2025, 19:16:10) [GCC 11.2.0]"
+  }
+}

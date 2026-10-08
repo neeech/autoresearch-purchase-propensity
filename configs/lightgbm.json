@@ -5,12 +5,13 @@
   "budget_minutes": 60,
   "threads": 4,
   "seed": 42,
-  "hypothesis": "Learning rate 0,025 mejor\u00f3 ambas m\u00e9tricas; probar 0,015 con 500 \u00e1rboles manteniendo learning_rate por iteraciones aproximadamente constante.",
+  "hypothesis": "Muestrear 80% de features por \u00e1rbol puede reducir dependencia de se\u00f1ales correlacionadas y mejorar generalizaci\u00f3n.",
   "params": {
-    "n_estimators": 500,
-    "learning_rate": 0.015,
+    "n_estimators": 300,
+    "learning_rate": 0.025,
     "num_leaves": 31,
     "min_child_samples": 30,
-    "reg_lambda": 1
+    "reg_lambda": 1,
+    "colsample_bytree": 0.8
   }
 }
