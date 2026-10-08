@@ -59,3 +59,16 @@ uv run python -m autoresearch_purchase_propensity.train
 Compara probabilidad constante y regresión logística con contexto, actividad e historia. Entrena sólo con train y evalúa mayo; no lee test. Reporta log loss y Average Precision, sin calibración. La imputación y codificación se ajustan sólo con train; se excluye month.
 
 Resultados: `reports/baselines.md` y `reports/baselines.html`. Cada ejecución conserva código, configuración, manifiesto de datos y modelos en `experiments/baselines/<run_id>/`. `latest.json` indica la ejecución actual. Los experimentos anteriores se conservan como historial.
+
+## Autoresearch LightGBM
+
+El agente de esta conversación propone configuraciones en `configs/lightgbm.json`. El runner ejecuta un candidato; no consulta un LLM ni genera candidatos automáticamente.
+
+```bash
+uv run python -m autoresearch_purchase_propensity.research --prepare
+# Commit local del protocolo, config y snapshot antes de entrenar.
+uv run python -m autoresearch_purchase_propensity.research --run
+# Commit local de resultados y estado después de entrenar.
+```
+
+Estado/presupuesto: `research-state.json`. Historial: `experiments/lightgbm/history.csv`. Decisiones: `research-log.md`; síntesis: `findings.md`. Cada candidato guarda código, configuración, versiones, hashes de datos y modelo nativo de LightGBM. No se lee test ni se usa early stopping; presupuesto máximo de 20 ejecuciones o 60 minutos desde el primer protocolo. No eliminar el estado para continuar: repetir prepare/run hasta el límite. Al finalizar, el mejor modelo está indicado por `research-state.json`.

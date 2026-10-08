@@ -4,3 +4,5 @@ __pycache__/
 data/processed/*.parquet
 experiments/baselines/**/model.joblib
 experiments/baselines/**/validation_predictions.parquet
+experiments/lightgbm/**/model.txt
+experiments/lightgbm/**/predictions.parquet
