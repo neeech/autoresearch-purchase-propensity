@@ -20,7 +20,6 @@
     "deviceCategory",
     "country",
     "city",
-    "bounces_missing",
     "pageviews_missing",
     "timeOnSite_missing",
     "history_sessions",
@@ -72,6 +71,7 @@
   },
   "history_policy": "strictly earlier days, updated sequentially across partitions",
   "target_assumption": "missing transactions means zero",
+  "bounce_policy": "null means no bounce; encoded as 0/1 per user-provided definition",
   "versions": {
     "pandas": "3.0.0"
   }

@@ -1,0 +1,25 @@
+control,filas afectadas,interpretación
+Duplicado exacto de las 15 columnas originales (excedentes),0,Sin identificador de sesión no se deduplica automáticamente.
+Repetición usuario + día (todas las filas del grupo),59346,Varias sesiones por día son legítimas; no es una clave.
+Repetición usuario + visitNumber (excedentes),403,Investigar repetición entre fechas; no basta como clave.
+Repetición usuario + día + visitNumber (excedentes),0,Unicidad observada no certifica una clave universal.
+ID con ceros iniciales,39207,Leer como texto para no alterar identidad.
+ID no compuesto exclusivamente por dígitos,0,Revisar anomalías de identificadores.
+pageviews > hits,0,Inconsistencia esperable si se cuentan en el mismo universo.
+hits < 1 o visitNumber < 1,0,Valores incompatibles con sesiones observadas.
+Compra con ingresos ausentes,0,Consistencia del outcome.
+Ingreso positivo sin compra,0,Consistencia del outcome.
+Rebote con compra,0,"Relación determinista observada, no regla universal."
+visitNumber: negativos o infinitos,0,No se corrigen silenciosamente.
+bounces: negativos o infinitos,0,No se corrigen silenciosamente.
+hits: negativos o infinitos,0,No se corrigen silenciosamente.
+pageviews: negativos o infinitos,0,No se corrigen silenciosamente.
+timeOnSite: negativos o infinitos,0,No se corrigen silenciosamente.
+transactions: negativos o infinitos,0,No se corrigen silenciosamente.
+transactionRevenue: negativos o infinitos,0,No se corrigen silenciosamente.
+visitNumber: valores no enteros,0,Contadores o resolución temporal; revisar fuente.
+hits: valores no enteros,0,Contadores o resolución temporal; revisar fuente.
+pageviews: valores no enteros,0,Contadores o resolución temporal; revisar fuente.
+transactions: valores no enteros,0,Contadores o resolución temporal; revisar fuente.
+timeOnSite: valores no enteros,0,Contadores o resolución temporal; revisar fuente.
+bounces: valores no enteros,0,Contadores o resolución temporal; revisar fuente.

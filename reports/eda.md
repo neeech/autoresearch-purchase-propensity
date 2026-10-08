@@ -1,39 +1,81 @@
-# Análisis exploratorio de sesiones
+# Dataset de sesiones: hallazgos y decisiones
 
-Generado por `eda.py` a partir de los datos normalizados, antes de construir historia.
+392,892 sesiones completas, 308,130 visitantes y 15 variables originales. Período: 2017-01-01 a 2017-06-30. Hay 5,277 sesiones con compra (1.34%). El objetivo actual es clasificar sesiones terminadas; los agregados pueden incluir consecuencias de la compra y no permiten validar anticipación online.
 
-392,892 sesiones, 308,130 visitantes y 5,277 sesiones con compra (1.34%). Fechas: 2017-01-01 a 2017-06-30.
+## Variables y tratamiento
 
-## Volumen, compras e historia
+| grupo | variables | tratamiento |
+|---|---|---|
+| Identidad y fecha | fullVisitorID, date, visitNumber | ID como texto para historia; no como predictor. Fecha para split y calendario. visitNumber es un contador, no una clave. |
+| Actividad | hits, pageviews, timeOnSite, bounces | Totales de sesión. Conservar faltantes e indicadores; probar log1p en contadores y duración. hits cuenta acciones, incluyendo páginas y clicks; duración en segundos. |
+| Contexto | source, channelGrouping, browser, deviceCategory, country, city | Categorías; codificar y resolver valores nuevos usando sólo entrenamiento. |
+| Resultado | transactions, transactionRevenue | Target: transactions > 0. Excluir ambas columnas y sus indicadores de ausencia de las features. |
 
-| Mes | Sesiones | Con compra | Tasa de compra | Visitantes nuevos observados | Sesiones con historia de días anteriores |
-|---|---:|---:|---:|---:|---:|
-| 2017-01 | 64,694 | 697 | 1.08% | 100.00% | 12.11% |
-| 2017-02 | 62,192 | 708 | 1.14% | 95.77% | 15.49% |
-| 2017-03 | 69,931 | 883 | 1.26% | 95.48% | 15.72% |
-| 2017-04 | 67,126 | 928 | 1.38% | 94.85% | 16.17% |
-| 2017-05 | 65,371 | 1,115 | 1.71% | 93.72% | 18.60% |
-| 2017-06 | 63,578 | 946 | 1.49% | 93.84% | 17.41% |
+## Calidad: lo esencial
 
-Un visitante nuevo observado no necesariamente es nuevo para el sitio: no tenemos historia anterior al inicio del archivo. La proporción de visitantes nuevos y la proporción de sesiones sin historia tienen denominadores diferentes.
+No hay duplicados exactos, valores numéricos negativos/infinitos ni inconsistencias detectadas entre compras e ingresos. Hay 403 repeticiones de usuario + visitNumber entre fechas y 59,346 filas en grupos usuario-día con varias sesiones. No deduplicar por usuario ni ordenar sesiones del mismo día sin timestamps.
 
-![Evolución mensual](figures/monthly.png)
+| variable | hallazgo | decisión |
+|---|---|---|
+| timeOnSite | 50.01% vacío | No asumir cero segundos. Conservar indicador y ajustar imputación sólo con train. |
+| bounces | 49.88% con rebote; resto sin rebote | Definición confirmada: null original se codifica como 0; no es un faltante desconocido. |
+| pageviews | 36 vacíos | Conservar e imputar dentro del pipeline. |
+| city | 228,132 ocultas en demo; 13,157 no definidas | Son motivos distintos; el procesamiento actual los combina. Probar una variante sin ciudad. |
+| transactions / revenue | Ambas vacías en las mismas sesiones | Se asume que transactions vacío significa cero compras registradas; confirmar con la fuente. |
 
-## Calidad y decisiones
+El diccionario proporcionado confirma las definiciones de las variables, incluida duración en segundos y rebote null=0. Revenue contiene decimales en el CSV pese a declararse INTEGER; no se fuerza a entero. Su moneda/escala y la zona horaria siguen sin documentarse. No se eliminan extremos automáticamente: las variables de actividad tienen colas largas.
 
-- El target es `transactions > 0`. Se asume explícitamente que un valor vacío significa cero compras; debe confirmarse con la fuente. Hay 0 filas con ingresos positivos sin compra y 0 compras sin ingresos registrados.
-- `transactions` y `transactionRevenue` se excluyen del modelo. Los totales de actividad describen sesiones terminadas y pueden incluir consecuencias de la compra; el benchmark no demuestra anticipación online.
-- `fullVisitorID` se conserva como texto para historia y auditoría, pero se excluye de las features.
-- `timeOnSite` falta en 50.01%; `bounces` en 50.12%. No se reemplazan automáticamente por cero. Se agregan indicadores de faltantes.
-- Los textos `(not set)` y `not available in demo dataset` se normalizan como faltantes en categorías. La imputación y codificación se ajustarán sólo con entrenamiento.
-- Hay 59,346 filas de usuarios con múltiples sesiones el mismo día. La historia usa únicamente días anteriores, evitando inventar un orden intradía.
-- Resúmenes de sesión duplicados: 0. No se eliminan automáticamente: no hay un identificador único de sesión en la fuente. `session_row_id` identifica la fila original.
-- Historia sin observaciones: contadores en cero, promedios/recencia desconocidos como faltantes y `has_history=0`.
+Referencia semántica: [esquema oficial de Universal Analytics](https://support.google.com/analytics/answer/3437719?hl=en).
 
-## Evaluación propuesta
+![Faltantes normalizados e historia en entrenamiento](figures/missingness_history.png)
 
-Entrenar enero–abril, validar mayo y reservar junio para test. La historia se actualiza secuencialmente con días anteriores, incluso dentro de validación/test, simulando disponibilidad de sesiones ya terminadas. Esto no ajusta parámetros del modelo con esos períodos.
+Izquierda: ausencias después de normalizar categorías, sobre todo el período. Derecha: tasas de compra en train; cada barra indica el volumen de sesiones. bounces ya está normalizado a 0/1: los null originales significan sin rebote.
 
-Comparar baseline sin historia y candidato con historia. Usar log loss como objetivo y Average Precision, Brier score y calibración como métricas complementarias; reportar nuevos observados y recurrentes por separado. No seleccionar modelos ni features con resultados del test. Este EDA describe todo el período y no constituye un test estadístico completamente ciego.
+## Historia y señales para investigar
 
-Los CSV adjuntos contienen faltantes, distribuciones numéricas y tasas por categoría. Las asociaciones son descriptivas; no prueban causalidad. La tabla mensual permite revisar desbalance y cambios temporales antes de entrenar.
+Entre los meses posteriores al primero, 93.7%–95.8% de los visitantes son nuevos en el archivo. Sin historia observada no equivale a primera visita real. El modelo debe funcionar bien para usuarios sin antecedentes disponibles.
+
+| historia en entrenamiento | sesiones | compras | tasa de compra % |
+|---|---|---|---|
+| con días previos | 39321 | 1329 | 3.3799 |
+| sin días previos | 224622 | 1887 | 0.8401 |
+
+La diferencia es una asociación descriptiva, no causal. La historia incluye número de sesiones y sesiones con compra, tasa de compra, medias de actividad y días desde última sesión/compra. Usa sólo días anteriores; sin historia, contadores=0 y medias/recencias=faltantes. Comparar modelos con y sin historia.
+
+Las sesiones con compra muestran más actividad y casi siempre duración observada. Esto puede reflejar tanto intención como efectos posteriores a la compra. La disponibilidad de ciudad también se asocia con el resultado y podría reflejar el mecanismo del dataset demo.
+
+![Actividad por resultado de compra, sólo entrenamiento](figures/activity_distributions.png)
+
+Las distribuciones se normalizan por separado para comparar formas pese al desbalance. El eje usa log(1 + valor); duración incluye sólo valores observados. La separación no demuestra anticipación de compras.
+
+## Evaluación y próximos baselines
+
+| partición | filas | compras | tasa compra % |
+|---|---|---|---|
+| train | 263943 | 3216 | 1.2184 |
+| validation | 65371 | 1115 | 1.7056 |
+| test | 63578 | 946 | 1.4879 |
+
+Validación desde 2017-05-01; test desde 2017-06-01; fechas anteriores para entrenamiento. Cambian la tasa de compra y la mezcla de fuentes/canales: mantener el split temporal. La historia se actualiza día a día, también dentro de validación/test, sin ajustar el modelo con esas filas.
+
+Baselines: probabilidad constante aprendida en train; regresión logística con contexto y actividad; misma logística con historia. Añadir comparaciones sólo contexto y sin ciudad para entender de dónde viene la señal. Optimizar log loss y acompañar con Average Precision, Brier y calibración, globales y según presencia de historia. Reservar resultados de modelos en test para el cierre.
+
+![Volumen, tasa de compra y visitantes nuevos por mes](figures/monthly.png)
+
+El primer mes muestra 100% de visitantes nuevos por inicio del registro; no implica que todos visitaran el sitio por primera vez.
+
+## Referencia y reproducción
+
+Las asociaciones con compra se calcularon sólo en train; los controles de calidad y cobertura describen todo el período. El test ya fue observado descriptivamente. Los CSV conservan el detalle para consultas puntuales.
+
+[Diccionario completo](data_dictionary.csv)
+
+[Controles de calidad](quality_checks.csv)
+
+[Distribuciones numéricas](numeric_quantiles.csv)
+
+[Categorías y desconocidas](category_audit.csv)
+
+[Evolución mensual](monthly.csv)
+
+Reproducir desde la raíz: PYTHONPATH=src python -m autoresearch_purchase_propensity.eda_detail --config configs/data.json. No modifica el CSV ni los Parquet.

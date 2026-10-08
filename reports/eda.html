@@ -1,0 +1,149 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EDA de sesiones</title><style>body{max-width:1200px;margin:40px auto;padding:0 24px;font:16px/1.6 system-ui;color:#243345}h1,h2{color:#125879}h2{margin-top:48px}table{display:block;overflow-x:auto;border-collapse:collapse;font-size:13px}td,th{padding:8px;border-bottom:1px solid #dce3ea;text-align:left}th{background:#edf4f7}img{max-width:100%;height:auto}p{max-width:1000px}</style><body><h1>Dataset de sesiones: hallazgos y decisiones</h1>
+<p>392,892 sesiones completas, 308,130 visitantes y 15 variables originales. Período: 2017-01-01 a 2017-06-30. Hay 5,277 sesiones con compra (1.34%). El objetivo actual es clasificar sesiones terminadas; los agregados pueden incluir consecuencias de la compra y no permiten validar anticipación online.</p>
+<h2>Variables y tratamiento</h2>
+<table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>grupo</th>
+      <th>variables</th>
+      <th>tratamiento</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Identidad y fecha</td>
+      <td>fullVisitorID, date, visitNumber</td>
+      <td>ID como texto para historia; no como predictor. Fecha para split y calendario. visitNumber es un contador, no una clave.</td>
+    </tr>
+    <tr>
+      <td>Actividad</td>
+      <td>hits, pageviews, timeOnSite, bounces</td>
+      <td>Totales de sesión. Conservar faltantes e indicadores; probar log1p en contadores y duración. hits cuenta acciones, incluyendo páginas y clicks; duración en segundos.</td>
+    </tr>
+    <tr>
+      <td>Contexto</td>
+      <td>source, channelGrouping, browser, deviceCategory, country, city</td>
+      <td>Categorías; codificar y resolver valores nuevos usando sólo entrenamiento.</td>
+    </tr>
+    <tr>
+      <td>Resultado</td>
+      <td>transactions, transactionRevenue</td>
+      <td>Target: transactions &gt; 0. Excluir ambas columnas y sus indicadores de ausencia de las features.</td>
+    </tr>
+  </tbody>
+</table>
+<h2>Calidad: lo esencial</h2>
+<p>No hay duplicados exactos, valores numéricos negativos/infinitos ni inconsistencias detectadas entre compras e ingresos. Hay 403 repeticiones de usuario + visitNumber entre fechas y 59,346 filas en grupos usuario-día con varias sesiones. No deduplicar por usuario ni ordenar sesiones del mismo día sin timestamps.</p>
+<table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>variable</th>
+      <th>hallazgo</th>
+      <th>decisión</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>timeOnSite</td>
+      <td>50.01% vacío</td>
+      <td>No asumir cero segundos. Conservar indicador y ajustar imputación sólo con train.</td>
+    </tr>
+    <tr>
+      <td>bounces</td>
+      <td>49.88% con rebote; resto sin rebote</td>
+      <td>Definición confirmada: null original se codifica como 0; no es un faltante desconocido.</td>
+    </tr>
+    <tr>
+      <td>pageviews</td>
+      <td>36 vacíos</td>
+      <td>Conservar e imputar dentro del pipeline.</td>
+    </tr>
+    <tr>
+      <td>city</td>
+      <td>228,132 ocultas en demo; 13,157 no definidas</td>
+      <td>Son motivos distintos; el procesamiento actual los combina. Probar una variante sin ciudad.</td>
+    </tr>
+    <tr>
+      <td>transactions / revenue</td>
+      <td>Ambas vacías en las mismas sesiones</td>
+      <td>Se asume que transactions vacío significa cero compras registradas; confirmar con la fuente.</td>
+    </tr>
+  </tbody>
+</table>
+<p>El diccionario proporcionado confirma las definiciones de las variables, incluida duración en segundos y rebote null=0. Revenue contiene decimales en el CSV pese a declararse INTEGER; no se fuerza a entero. Su moneda/escala y la zona horaria siguen sin documentarse. No se eliminan extremos automáticamente: las variables de actividad tienen colas largas.</p>
+<p>Referencia: <a href="https://support.google.com/analytics/answer/3437719?hl=en">Esquema oficial de Universal Analytics</a>.</p>
+<img src="figures/missingness_history.png" alt="Faltantes normalizados e historia en entrenamiento">
+<p>Izquierda: ausencias después de normalizar categorías, sobre todo el período. Derecha: tasas de compra en train; cada barra indica el volumen de sesiones. bounces ya está normalizado a 0/1: los null originales significan sin rebote.</p>
+<h2>Historia y señales para investigar</h2>
+<p>Entre los meses posteriores al primero, 93.7%–95.8% de los visitantes son nuevos en el archivo. Sin historia observada no equivale a primera visita real. El modelo debe funcionar bien para usuarios sin antecedentes disponibles.</p>
+<table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>historia en entrenamiento</th>
+      <th>sesiones</th>
+      <th>compras</th>
+      <th>tasa de compra %</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>con días previos</td>
+      <td>39321</td>
+      <td>1329</td>
+      <td>3.3799</td>
+    </tr>
+    <tr>
+      <td>sin días previos</td>
+      <td>224622</td>
+      <td>1887</td>
+      <td>0.8401</td>
+    </tr>
+  </tbody>
+</table>
+<p>La diferencia es una asociación descriptiva, no causal. La historia incluye número de sesiones y sesiones con compra, tasa de compra, medias de actividad y días desde última sesión/compra. Usa sólo días anteriores; sin historia, contadores=0 y medias/recencias=faltantes. Comparar modelos con y sin historia.</p>
+<p>Las sesiones con compra muestran más actividad y casi siempre duración observada. Esto puede reflejar tanto intención como efectos posteriores a la compra. La disponibilidad de ciudad también se asocia con el resultado y podría reflejar el mecanismo del dataset demo.</p>
+<img src="figures/activity_distributions.png" alt="Actividad por resultado de compra, sólo entrenamiento">
+<p>Las distribuciones se normalizan por separado para comparar formas pese al desbalance. El eje usa log(1 + valor); duración incluye sólo valores observados. La separación no demuestra anticipación de compras.</p>
+<h2>Evaluación y próximos baselines</h2>
+<table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>partición</th>
+      <th>filas</th>
+      <th>compras</th>
+      <th>tasa compra %</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>train</td>
+      <td>263943</td>
+      <td>3216</td>
+      <td>1.2184</td>
+    </tr>
+    <tr>
+      <td>validation</td>
+      <td>65371</td>
+      <td>1115</td>
+      <td>1.7056</td>
+    </tr>
+    <tr>
+      <td>test</td>
+      <td>63578</td>
+      <td>946</td>
+      <td>1.4879</td>
+    </tr>
+  </tbody>
+</table>
+<p>Validación desde 2017-05-01; test desde 2017-06-01; fechas anteriores para entrenamiento. Cambian la tasa de compra y la mezcla de fuentes/canales: mantener el split temporal. La historia se actualiza día a día, también dentro de validación/test, sin ajustar el modelo con esas filas.</p>
+<p>Baselines: probabilidad constante aprendida en train; regresión logística con contexto y actividad; misma logística con historia. Añadir comparaciones sólo contexto y sin ciudad para entender de dónde viene la señal. Optimizar log loss y acompañar con Average Precision, Brier y calibración, globales y según presencia de historia. Reservar resultados de modelos en test para el cierre.</p>
+<img src="figures/monthly.png" alt="Volumen, tasa de compra y visitantes nuevos por mes">
+<p>El primer mes muestra 100% de visitantes nuevos por inicio del registro; no implica que todos visitaran el sitio por primera vez.</p>
+<h2>Referencia y reproducción</h2>
+<p>Las asociaciones con compra se calcularon sólo en train; los controles de calidad y cobertura describen todo el período. El test ya fue observado descriptivamente. Los CSV conservan el detalle para consultas puntuales.</p>
+<p><a href="data_dictionary.csv">Diccionario completo</a></p>
+<p><a href="quality_checks.csv">Controles de calidad</a></p>
+<p><a href="numeric_quantiles.csv">Distribuciones numéricas</a></p>
+<p><a href="category_audit.csv">Categorías y desconocidas</a></p>
+<p><a href="monthly.csv">Evolución mensual</a></p>
+<p>Reproducir desde la raíz: PYTHONPATH=src python -m autoresearch_purchase_propensity.eda_detail --config configs/data.json. No modifica el CSV ni los Parquet.</p></body></html>

@@ -78,7 +78,7 @@ Un visitante nuevo observado no necesariamente es nuevo para el sitio: no tenemo
 - El target es `transactions > 0`. Se asume explícitamente que un valor vacío significa cero compras; debe confirmarse con la fuente. Hay {audit_stats['revenue_without_purchase']} filas con ingresos positivos sin compra y {audit_stats['purchase_without_revenue']} compras sin ingresos registrados.
 - `transactions` y `transactionRevenue` se excluyen del modelo. Los totales de actividad describen sesiones terminadas y pueden incluir consecuencias de la compra; el benchmark no demuestra anticipación online.
 - `fullVisitorID` se conserva como texto para historia y auditoría, pero se excluye de las features.
-- `timeOnSite` falta en {data.timeOnSite.isna().mean():.2%}; `bounces` en {data.bounces.isna().mean():.2%}. No se reemplazan automáticamente por cero. Se agregan indicadores de faltantes.
+- `timeOnSite` falta en {data.timeOnSite.isna().mean():.2%}; `bounces` en {data.bounces.isna().mean():.2%}. Duración conserva faltantes e indicador; bounces ya se normalizó a 0/1 según la definición proporcionada.
 - Los textos `(not set)` y `not available in demo dataset` se normalizan como faltantes en categorías. La imputación y codificación se ajustarán sólo con entrenamiento.
 - Hay {audit_stats['same_day_multi_session_rows']:,} filas de usuarios con múltiples sesiones el mismo día. La historia usa únicamente días anteriores, evitando inventar un orden intradía.
 - Resúmenes de sesión duplicados: {audit_stats['duplicate_session_summaries']}. No se eliminan automáticamente: no hay un identificador único de sesión en la fuente. `session_row_id` identifica la fila original.

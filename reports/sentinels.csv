@@ -1,0 +1,7 @@
+variable,texto,filas,porcentaje,acción actual
+source,(not set),65,0.01654398664263971,faltante
+source,(direct),167390,42.60458344786863,se conserva
+browser,(not set),2,0.0005090457428504526,faltante
+country,(not set),545,0.1387149649267483,faltante
+city,(not set),13157,3.3487574193417022,faltante
+city,not available in demo dataset,228132,58.06481170397972,faltante

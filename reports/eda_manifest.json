@@ -1,0 +1,139 @@
+{
+  "raw_sha256": "55793302dd998c9c2da014df95c83d1e938e16f903590c932a229ad591b024c5",
+  "config": {
+    "raw_path": "data/raw/data.csv",
+    "output_dir": "data/processed",
+    "report_dir": "reports",
+    "validation_start": "2017-05-01",
+    "test_start": "2017-06-01",
+    "missing_transactions_mean_zero": true
+  },
+  "association_scope": "train only",
+  "descriptive_scope": "all periods",
+  "versions": {
+    "pandas": "3.0.0",
+    "numpy": "2.1.1"
+  },
+  "checks": [
+    {
+      "control": "Duplicado exacto de las 15 columnas originales (excedentes)",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "Sin identificador de sesi\u00f3n no se deduplica autom\u00e1ticamente."
+    },
+    {
+      "control": "Repetici\u00f3n usuario + d\u00eda (todas las filas del grupo)",
+      "filas afectadas": 59346,
+      "interpretaci\u00f3n": "Varias sesiones por d\u00eda son leg\u00edtimas; no es una clave."
+    },
+    {
+      "control": "Repetici\u00f3n usuario + visitNumber (excedentes)",
+      "filas afectadas": 403,
+      "interpretaci\u00f3n": "Investigar repetici\u00f3n entre fechas; no basta como clave."
+    },
+    {
+      "control": "Repetici\u00f3n usuario + d\u00eda + visitNumber (excedentes)",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "Unicidad observada no certifica una clave universal."
+    },
+    {
+      "control": "ID con ceros iniciales",
+      "filas afectadas": 39207,
+      "interpretaci\u00f3n": "Leer como texto para no alterar identidad."
+    },
+    {
+      "control": "ID no compuesto exclusivamente por d\u00edgitos",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "Revisar anomal\u00edas de identificadores."
+    },
+    {
+      "control": "pageviews > hits",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "Inconsistencia esperable si se cuentan en el mismo universo."
+    },
+    {
+      "control": "hits < 1 o visitNumber < 1",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "Valores incompatibles con sesiones observadas."
+    },
+    {
+      "control": "Compra con ingresos ausentes",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "Consistencia del outcome."
+    },
+    {
+      "control": "Ingreso positivo sin compra",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "Consistencia del outcome."
+    },
+    {
+      "control": "Rebote con compra",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "Relaci\u00f3n determinista observada, no regla universal."
+    },
+    {
+      "control": "visitNumber: negativos o infinitos",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "No se corrigen silenciosamente."
+    },
+    {
+      "control": "bounces: negativos o infinitos",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "No se corrigen silenciosamente."
+    },
+    {
+      "control": "hits: negativos o infinitos",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "No se corrigen silenciosamente."
+    },
+    {
+      "control": "pageviews: negativos o infinitos",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "No se corrigen silenciosamente."
+    },
+    {
+      "control": "timeOnSite: negativos o infinitos",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "No se corrigen silenciosamente."
+    },
+    {
+      "control": "transactions: negativos o infinitos",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "No se corrigen silenciosamente."
+    },
+    {
+      "control": "transactionRevenue: negativos o infinitos",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "No se corrigen silenciosamente."
+    },
+    {
+      "control": "visitNumber: valores no enteros",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "Contadores o resoluci\u00f3n temporal; revisar fuente."
+    },
+    {
+      "control": "hits: valores no enteros",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "Contadores o resoluci\u00f3n temporal; revisar fuente."
+    },
+    {
+      "control": "pageviews: valores no enteros",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "Contadores o resoluci\u00f3n temporal; revisar fuente."
+    },
+    {
+      "control": "transactions: valores no enteros",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "Contadores o resoluci\u00f3n temporal; revisar fuente."
+    },
+    {
+      "control": "timeOnSite: valores no enteros",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "Contadores o resoluci\u00f3n temporal; revisar fuente."
+    },
+    {
+      "control": "bounces: valores no enteros",
+      "filas afectadas": 0,
+      "interpretaci\u00f3n": "Contadores o resoluci\u00f3n temporal; revisar fuente."
+    }
+  ]
+}

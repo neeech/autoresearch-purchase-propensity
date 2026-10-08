@@ -1,7 +1,9 @@
 import unittest
+import tempfile
+from pathlib import Path
 import pandas as pd
 from autoresearch_purchase_propensity.features import add_history
-from autoresearch_purchase_propensity.preprocess import temporal_split
+from autoresearch_purchase_propensity.preprocess import temporal_split, load_sessions
 
 
 class HistoryTests(unittest.TestCase):
@@ -31,6 +33,20 @@ class HistoryTests(unittest.TestCase):
         parts = temporal_split(add_history(self.fixture()), '2017-05-01', '2017-06-01')
         self.assertEqual([len(p) for p in parts.values()], [1, 2, 2])
         self.assertEqual(len(set(pd.concat(parts.values()).session_row_id)), 5)
+
+
+class SourceSemanticsTests(unittest.TestCase):
+    def test_null_bounce_means_zero_but_duration_remains_unknown(self):
+        header = 'fullVisitorID,visitNumber,date,bounces,hits,pageviews,timeOnSite,transactionRevenue,transactions,source,channelGrouping,browser,deviceCategory,country,city\n'
+        rows = '00123,1,20170101,1,1,1,,,,google,Organic Search,Chrome,desktop,Argentina,Cordoba\n00123,2,20170102,,2,2,,,,google,Organic Search,Chrome,desktop,Argentina,Cordoba\n'
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'raw.csv'
+            path.write_text(header + rows)
+            data = load_sessions(path)
+        self.assertEqual(data.bounces.tolist(), [1, 0])
+        self.assertNotIn('bounces_missing', data)
+        self.assertTrue(data.timeOnSite.isna().all())
+        self.assertEqual(data.fullVisitorID.tolist(), ['00123', '00123'])
 
 
 if __name__ == '__main__':

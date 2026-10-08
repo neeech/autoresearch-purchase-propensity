@@ -34,8 +34,12 @@ def load_sessions(path, missing_transactions_mean_zero=True):
     for col in CATEGORICAL:
         data[col] = data[col].astype('string').replace(
             {'(not set)': pd.NA, 'not available in demo dataset': pd.NA})
-    # Preserve unknown durations/bounces instead of assuming zero.
-    for col in ['bounces', 'pageviews', 'timeOnSite']:
+    # Source definition: null bounce means no bounce, not an unknown value.
+    if not data.bounces.dropna().isin([0, 1]).all():
+        raise ValueError('bounces must be 0, 1 or null')
+    data['bounces'] = data.bounces.fillna(0).astype('int8')
+    # Duration/pageview absence remains unknown.
+    for col in ['pageviews', 'timeOnSite']:
         data[f'{col}_missing'] = data[col].isna().astype('int8')
     return data
 
@@ -58,9 +62,9 @@ def main():
     args = parser.parse_args()
     config = json.loads(Path(args.config).read_text())
     sessions = load_sessions(config['raw_path'], config['missing_transactions_mean_zero'])
-    from .eda import generate_report
-    # EDA precedes feature construction; test labels are descriptive only.
-    generate_report(sessions, Path(config['report_dir']))
+    from .eda_detail import run as generate_deep_report
+    # Associations use train only; raw quality audit covers all periods.
+    generate_deep_report(config)
     enriched = add_history(sessions)
     parts = temporal_split(enriched, config['validation_start'], config['test_start'])
     out = Path(config['output_dir'])
@@ -81,6 +85,7 @@ def main():
                 'features': features, 'excluded': excluded, 'splits': summary,
                 'history_policy': 'strictly earlier days, updated sequentially across partitions',
                 'target_assumption': 'missing transactions means zero',
+                'bounce_policy': 'null means no bounce; encoded as 0/1 per user-provided definition',
                 'versions': {'pandas': pd.__version__}}
     (out / 'manifest.json').write_text(json.dumps(manifest, indent=2))
     (Path(config['report_dir']) / 'split_summary.json').write_text(json.dumps(summary, indent=2))
