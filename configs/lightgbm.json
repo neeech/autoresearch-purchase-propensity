@@ -5,12 +5,12 @@
   "budget_minutes": 60,
   "threads": 4,
   "seed": 42,
-  "hypothesis": "El m\u00ednimo de 300 sesiones no mejor\u00f3 log loss; probar 30 permite patrones locales, manteniendo el resto fijo.",
+  "hypothesis": "Con m\u00ednimo de 30 sesiones, aumentar L2 a 5 puede estabilizar probabilidades de hojas poco frecuentes.",
   "params": {
     "n_estimators": 300,
     "learning_rate": 0.05,
     "num_leaves": 31,
     "min_child_samples": 30,
-    "reg_lambda": 1
+    "reg_lambda": 5
   }
 }

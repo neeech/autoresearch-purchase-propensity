@@ -9,3 +9,7 @@ Presupuesto: 20 entrenamientos o 60 minutos; se detiene al alcanzar cualquiera. 
 ## Hallazgos
 
 Pendientes de la primera ejecución.
+
+### Revisión tras 5 experimentos
+
+El mínimo de 30 sesiones por hoja mejora la referencia: log loss 0,033878 frente a 0,034000, con 31 hojas y 300 árboles. 63 hojas empeoran; 15 no mejora. Un mínimo de 300 sesiones reduce Brier pero no log loss, por lo que no se promueve. Se conserva el mínimo de 30 como candidato actual. Próxima etapa: regularización L2 y duración del boosting, manteniendo la selección por log loss.
