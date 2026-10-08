@@ -49,3 +49,13 @@ uv run python -m autoresearch_purchase_propensity.eda_detail --config configs/da
 ```
 
 No modifica el CSV ni los Parquet. Compara faltantes originales y normalizados, verifica claves y consistencia, y calcula relaciones con compra sólo sobre train. Las estadísticas de cobertura y drift incluyen todo el período. El reporte HTML referencia figuras locales: compartir junto con `reports/figures/`.
+
+## Baselines simples
+
+```bash
+uv run python -m autoresearch_purchase_propensity.train
+```
+
+Compara probabilidad constante y regresión logística con contexto, actividad e historia. Entrena sólo con train y evalúa mayo; no lee test. Reporta log loss y Average Precision, sin calibración. La imputación y codificación se ajustan sólo con train; se excluye month.
+
+Resultados: `reports/baselines.md` y `reports/baselines.html`. Cada ejecución conserva código, configuración, manifiesto de datos y modelos en `experiments/baselines/<run_id>/`. `latest.json` indica la ejecución actual. Los experimentos anteriores se conservan como historial.

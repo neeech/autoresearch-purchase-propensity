@@ -1,0 +1,8 @@
+3.13.9 | packaged by Anaconda, Inc. | (main, Oct 21 2025, 19:16:10) [GCC 11.2.0]
+{
+  "python_note": "see environment.txt",
+  "sklearn": "1.8.0",
+  "numpy": "2.1.1",
+  "pandas": "3.0.0",
+  "joblib": "1.5.2"
+}
