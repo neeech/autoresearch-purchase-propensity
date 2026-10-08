@@ -1,0 +1,19 @@
+[project]
+name = "autoresearch-purchase-propensity"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "manu-horn", email = "manuhorn1910@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "scikit-learn>=1.9.1",
+]
+
+[project.scripts]
+autoresearch-purchase-propensity = "autoresearch_purchase_propensity:main"
+
+[build-system]
+requires = ["uv_build>=0.12.15,<0.13.0"]
+build-backend = "uv_build"
