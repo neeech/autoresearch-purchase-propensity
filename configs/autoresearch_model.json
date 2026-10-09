@@ -1,0 +1,5 @@
+{
+  "model": "logistic",
+  "params": {"C": 1.0, "max_iter": 500, "solver": "liblinear"},
+  "min_category_frequency": 20
+}

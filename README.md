@@ -59,3 +59,7 @@ uv run python -m autoresearch_purchase_propensity.train
 Compara probabilidad constante y regresión logística con contexto, actividad e historia. Entrena sólo con train y evalúa mayo; no lee test. Reporta log loss y Average Precision, sin calibración. La imputación y codificación se ajustan sólo con train; se excluye month.
 
 Resultados: `reports/baselines.md` y `reports/baselines.html`. Cada ejecución conserva código, configuración, manifiesto de datos y modelos en `experiments/baselines/<run_id>/`. `latest.json` indica la ejecución actual. Los experimentos anteriores se conservan como historial.
+
+## AutoResearch propio
+
+`uv run python autoresearch.py --experiments 3` utiliza GPT-OSS 120B en Groq (API con plan gratuito). Requiere `GROQ_API_KEY`; no requiere Ollama ni Docker. El agente propone cambios sólo en las configuraciones JSON de features y modelos. Entrena localmente, selecciona por log loss de mayo y registra todos los experimentos. Preparación y archivos: [reporte](reports/autoresearch_own_loop.md).

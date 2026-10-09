@@ -12,6 +12,7 @@ dependencies = [
     "pandas>=2.2",
     "pyarrow>=18",
     "matplotlib>=3.9",
+    "lightgbm>=4.7.0",
 ]
 
 [project.scripts]
