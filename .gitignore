@@ -6,3 +6,4 @@ experiments/baselines/**/model.joblib
 experiments/baselines/**/validation_predictions.parquet
 experiments/lightgbm/**/model.txt
 experiments/lightgbm/**/predictions.parquet
+experiments/final_test/predictions.parquet

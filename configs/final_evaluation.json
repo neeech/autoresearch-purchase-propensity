@@ -1,0 +1,36 @@
+{
+  "models": {
+    "lightgbm": "experiments/lightgbm/run_017/model.txt",
+    "logistic": "experiments/baselines/20261008T211349197683Z/model.joblib"
+  },
+  "sha256": {
+    "lightgbm": "33781256ec1900724a21b522acd9b3ef6e79ace5adff6efba51941dbde402785",
+    "logistic": "4bb2aa7dcbea5b3cc120c595f7e21f445e4a9db413dff983ea9b2c7bc3f073d6"
+  },
+  "selected_config": {
+    "data_dir": "data/processed",
+    "output_dir": "experiments/lightgbm",
+    "max_experiments": 20,
+    "budget_minutes": 60,
+    "threads": 4,
+    "seed": 42,
+    "hypothesis": "15 hojas no mejora con muestreo; 47 permite interacciones adicionales sin llegar a las 63 que fallaron inicialmente.",
+    "params": {
+      "n_estimators": 300,
+      "learning_rate": 0.025,
+      "num_leaves": 47,
+      "min_child_samples": 30,
+      "reg_lambda": 1,
+      "subsample": 0.6,
+      "subsample_freq": 1
+    }
+  },
+  "selection_metrics": {
+    "experiment": "experiments/lightgbm/run_017",
+    "log_loss": 0.03350780560782618,
+    "brier": 0.010379286646765297
+  },
+  "test_period": "2017-06",
+  "policy": "No refitting, tuning or calibration; one evaluation of June.",
+  "evaluation_code_sha256": "77bb9b2d4c262fc14ee2833d56e8fde4ad0529490930b01ed2650bace9072c61"
+}
