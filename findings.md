@@ -29,3 +29,9 @@ Ganador por menor log loss: run_017 (300 árboles, learning_rate=0,025, 47 hojas
 Mejora relativa frente a logística: 10,82% en log loss; Brier baja de 0,011327090 a 0,010379287. Run_015 (31 hojas) está prácticamente empatado en log loss (diferencia 0,000000125); no se puede afirmar superioridad estadística de 47 hojas. 450 árboles empeora; 225 queda casi empatado con 300 en la última región. Estos resultados seleccionan un candidato en mayo, no demuestran rendimiento futuro.
 
 Presupuesto agotado por número de entrenamientos; no se inicia otra ejecución. Junio no fue leído para entrenar ni evaluar. No se hizo calibración, búsqueda de features ni parada temprana. El modelo seleccionado sigue entrenado sólo en enero–abril. Próxima evaluación de junio requiere cerrar previamente cualquier decisión de selección y reentrenamiento.
+
+### Evaluación final de junio: proyecto cerrado
+
+Selección y hashes congelados antes de test en commit 5ec76f1. Se evaluaron una sola vez los modelos entrenados en enero–abril, sin reentrenamiento. LightGBM: log loss 0,029803438, Brier 0,009212972. Logística: log loss 0,033255924, Brier 0,009982702. Reducciones relativas: 10,38% y 7,71%. Mejora presente tanto con como sin historia previa.
+
+Esta ejecución queda como referencia de la skill para la futura tool propia en otra branch. Junio ya fue observado; no utilizarlo para dirigir esa búsqueda. Para comparación justa mantener datos, features, presupuesto, recursos y métricas. No se instrumentó el costo en tokens del agente. Detalles en reports/autoresearch.md.

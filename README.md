@@ -72,3 +72,15 @@ uv run python -m autoresearch_purchase_propensity.research --run
 ```
 
 Estado/presupuesto: `research-state.json`. Historial: `experiments/lightgbm/history.csv`. Decisiones: `research-log.md`; síntesis: `findings.md`. Cada candidato guarda código, configuración, versiones, hashes de datos y modelo nativo de LightGBM. No se lee test ni se usa early stopping; presupuesto máximo de 20 ejecuciones o 60 minutos desde el primer protocolo. No eliminar el estado para continuar: repetir prepare/run hasta el límite. Al finalizar, el mejor modelo está indicado por `research-state.json`.
+
+## Cierre y referencia para otra tool
+
+Resultados y metodología: [reports/autoresearch.md](reports/autoresearch.md). Se congelaron los modelos antes de evaluar junio, sin reentrenar; métricas finales en `experiments/final_test/metrics.csv`. El protocolo congelado identifica los artefactos mediante hashes. La evaluación final rechaza otra ejecución si ya existe su carpeta de resultados.
+
+```bash
+# Estas operaciones ya se ejecutaron; se muestran como referencia del protocolo.
+uv run python -m autoresearch_purchase_propensity.final_evaluation --freeze
+uv run python -m autoresearch_purchase_propensity.final_evaluation
+```
+
+Este baseline se conserva en `autoresearchToolTest`. Para la futura tool, mantener igual protocolo y presupuesto y congelar su candidato antes de comparar con junio. Junio ya no es un período desconocido: no usar sus métricas para ajustar la búsqueda.

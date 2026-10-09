@@ -8,5 +8,7 @@
     "log_loss": 0.03350780560782618,
     "brier": 0.010379286646765297
   },
-  "status": "complete"
+  "status": "complete",
+  "test_evaluated": true,
+  "test_results": "experiments/final_test/metrics.csv"
 }

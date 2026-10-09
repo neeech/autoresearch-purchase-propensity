@@ -11,7 +11,27 @@
   "experiments": 20,
   "unique_configurations": 19,
   "relative_log_loss_improvement": 0.10816338295104333,
-  "test_evaluated": false,
+  "test_evaluated": true,
   "winner_reproduced": true,
-  "saved_model_verified": true
+  "saved_model_verified": true,
+  "test_metrics": {
+    "logistic": {
+      "segment": "all",
+      "rows": 63578,
+      "positives": 946,
+      "log_loss": 0.0332559244710014,
+      "brier": 0.0099827016492923
+    },
+    "lightgbm": {
+      "segment": "all",
+      "rows": 63578,
+      "positives": 946,
+      "log_loss": 0.0298034379940602,
+      "brier": 0.0092129716757776
+    }
+  },
+  "test_relative_log_loss_improvement": 0.1038156819231324,
+  "test_relative_brier_improvement": 0.07710637866947267,
+  "selection_freeze_commit": "5ec76f1",
+  "reference_branch": "autoresearchToolTest"
 }
