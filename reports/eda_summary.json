@@ -1,0 +1,18 @@
+{
+  "rows": 392892,
+  "visitors": 308130,
+  "positive_sessions": 5277,
+  "purchase_rate": 0.013431171925109191,
+  "duplicate_session_summaries": 0,
+  "revenue_without_purchase": 0,
+  "purchase_without_revenue": 0,
+  "same_day_multi_session_rows": 59346,
+  "categorical_cardinality": {
+    "source": 209,
+    "channelGrouping": 8,
+    "browser": 38,
+    "deviceCategory": 3,
+    "country": 212,
+    "city": 414
+  }
+}

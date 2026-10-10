@@ -1,0 +1,49 @@
+{
+  "hypothesis": "Assess dependence on city availability in the demo extract.",
+  "features": [
+    "visitNumber",
+    "source",
+    "channelGrouping",
+    "browser",
+    "deviceCategory",
+    "country",
+    "day_of_week",
+    "is_weekend",
+    "bounces",
+    "hits",
+    "pageviews",
+    "timeOnSite",
+    "pageviews_missing",
+    "timeOnSite_missing",
+    "history_sessions",
+    "history_purchase_sessions",
+    "has_history",
+    "history_purchase_rate",
+    "history_mean_hits",
+    "history_mean_pageviews",
+    "history_mean_time_on_site",
+    "days_since_last_session",
+    "days_since_last_purchase"
+  ],
+  "config": {
+    "data_dir": "data/processed",
+    "output_root": "experiments/baselines",
+    "seed": 42,
+    "primary_metric": "log_loss",
+    "direction": "minimize",
+    "logistic": {
+      "C": 1.0,
+      "solver": "liblinear",
+      "max_iter": 500,
+      "tol": 1e-05
+    },
+    "min_category_frequency": 20,
+    "variants": [
+      "constant",
+      "context_only",
+      "session",
+      "session_history",
+      "session_history_no_city"
+    ]
+  }
+}

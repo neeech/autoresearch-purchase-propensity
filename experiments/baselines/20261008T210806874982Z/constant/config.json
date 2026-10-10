@@ -1,0 +1,25 @@
+{
+  "hypothesis": "Reference probability estimated from train prevalence.",
+  "features": [],
+  "config": {
+    "data_dir": "data/processed",
+    "output_root": "experiments/baselines",
+    "seed": 42,
+    "primary_metric": "log_loss",
+    "direction": "minimize",
+    "logistic": {
+      "C": 1.0,
+      "solver": "liblinear",
+      "max_iter": 500,
+      "tol": 1e-05
+    },
+    "min_category_frequency": 20,
+    "variants": [
+      "constant",
+      "context_only",
+      "session",
+      "session_history",
+      "session_history_no_city"
+    ]
+  }
+}

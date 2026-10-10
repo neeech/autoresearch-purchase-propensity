@@ -1,0 +1,88 @@
+{
+  "variant": "session_history_no_city",
+  "features": [
+    "visitNumber",
+    "source",
+    "channelGrouping",
+    "browser",
+    "deviceCategory",
+    "country",
+    "day_of_week",
+    "is_weekend",
+    "bounces",
+    "hits",
+    "pageviews",
+    "timeOnSite",
+    "pageviews_missing",
+    "timeOnSite_missing",
+    "history_sessions",
+    "history_purchase_sessions",
+    "has_history",
+    "history_purchase_rate",
+    "history_mean_hits",
+    "history_mean_pageviews",
+    "history_mean_time_on_site",
+    "days_since_last_session",
+    "days_since_last_purchase"
+  ],
+  "status": "ok",
+  "warnings": [],
+  "converged": true,
+  "metrics": {
+    "all": {
+      "rows": 65371,
+      "positives": 1115,
+      "purchase_rate": 0.017056492940294626,
+      "mean_probability": 0.013533425224223015,
+      "log_loss": 0.03805432700969709,
+      "average_precision": 0.4862824370586481,
+      "brier": 0.011544410759602624,
+      "roc_auc": 0.9849579819734515
+    },
+    "without_prior_day_history": {
+      "rows": 53214,
+      "positives": 606,
+      "purchase_rate": 0.011387980606607284,
+      "mean_probability": 0.00892714940975424,
+      "log_loss": 0.02913631213345818,
+      "average_precision": 0.3820258571790203,
+      "brier": 0.008635408662081519,
+      "roc_auc": 0.9856512681377627
+    },
+    "with_prior_day_history": {
+      "rows": 12157,
+      "positives": 509,
+      "purchase_rate": 0.04186888212552439,
+      "mean_probability": 0.0336961595493971,
+      "log_loss": 0.077090540189279,
+      "average_precision": 0.5871506951534086,
+      "brier": 0.02427778557390616,
+      "roc_auc": 0.9769979989313241
+    },
+    "visitor_unseen_in_train": {
+      "rows": 59418,
+      "positives": 834,
+      "purchase_rate": 0.014036150661415732,
+      "mean_probability": 0.011254630324455906,
+      "log_loss": 0.03352795446075762,
+      "average_precision": 0.4357953616453131,
+      "brier": 0.010041163749783312,
+      "roc_auc": 0.9850588599173918
+    },
+    "visitor_seen_in_train": {
+      "rows": 5953,
+      "positives": 281,
+      "purchase_rate": 0.04720309087854863,
+      "mean_probability": 0.036278500875888055,
+      "log_loss": 0.08323289312978531,
+      "average_precision": 0.6172283344534538,
+      "brier": 0.026548598703403026,
+      "roc_auc": 0.9777053039467145
+    }
+  },
+  "elapsed_seconds": 15.53193551699951,
+  "iterations": [
+    13
+  ],
+  "encoded_features": 244
+}

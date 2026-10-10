@@ -1,0 +1,416 @@
+city,size,sum,mean
+,241289,2184,0.009051386511610558
+Mountain View,18152,527,0.029032613486117232
+New York,12458,678,0.05442286081232943
+San Francisco,9707,325,0.0334809930977645
+London,6231,3,0.00048146364949446316
+Sunnyvale,6144,210,0.0341796875
+San Jose,4709,111,0.02357188362709705
+Los Angeles,4299,144,0.03349616189811584
+Chicago,3476,200,0.05753739930955121
+Bengaluru,2625,1,0.00038095238095238096
+Sydney,2409,4,0.0016604400166044002
+Chennai,2388,0,0.0
+Seattle,2353,120,0.050998725031874206
+Dublin,2303,4,0.0017368649587494573
+Toronto,2253,24,0.010652463382157125
+Paris,2218,2,0.0009017132551848512
+Mumbai,1931,1,0.0005178663904712584
+Hyderabad,1705,0,0.0
+Austin,1675,92,0.05492537313432836
+Warsaw,1581,1,0.0006325110689437065
+Hong Kong,1581,3,0.0018975332068311196
+Madrid,1567,0,0.0
+Bangkok,1513,0,0.0
+Santa Clara,1508,36,0.023872679045092837
+Singapore,1505,2,0.00132890365448505
+Melbourne,1364,1,0.0007331378299120235
+Istanbul,1349,1,0.0007412898443291327
+Sao Paulo,1348,5,0.00370919881305638
+Minato,1295,2,0.0015444015444015444
+Tel Aviv-Yafo,1292,2,0.0015479876160990713
+Washington,1252,38,0.03035143769968051
+Seoul,1226,2,0.0016313213703099511
+Palo Alto,1225,21,0.017142857142857144
+Houston,1169,24,0.020530367835757058
+Atlanta,1121,48,0.042818911685994644
+Pune,1115,0,0.0
+Montreal,1046,7,0.006692160611854685
+New Delhi,1026,0,0.0
+Jakarta,971,2,0.0020597322348094747
+Kuala Lumpur,957,1,0.0010449320794148381
+Kirkland,936,45,0.04807692307692308
+Moscow,936,0,0.0
+Salem,890,33,0.03707865168539326
+Barcelona,886,1,0.001128668171557562
+Ann Arbor,874,76,0.08695652173913043
+Mexico City,863,1,0.0011587485515643105
+Kolkata,836,0,0.0
+Bogota,831,1,0.0012033694344163659
+Dallas,786,9,0.011450381679389313
+Cambridge,780,53,0.06794871794871794
+San Bruno,768,51,0.06640625
+San Diego,695,14,0.02014388489208633
+Berlin,670,0,0.0
+Amsterdam,612,0,0.0
+Milan,596,0,0.0
+Buenos Aires,595,0,0.0
+Stockholm,583,1,0.0017152658662092624
+Zurich,552,1,0.0018115942028985507
+Brisbane,466,0,0.0
+Pittsburgh,466,12,0.02575107296137339
+Kiev,464,0,0.0
+Ho Chi Minh City,461,0,0.0
+Philadelphia,454,6,0.013215859030837005
+Hamburg,453,0,0.0
+La Victoria,445,0,0.0
+Prague,405,1,0.0024691358024691358
+Osaka,401,0,0.0
+Irvine,394,26,0.06598984771573604
+Fremont,389,7,0.017994858611825194
+Lisbon,385,0,0.0
+Ahmedabad,385,1,0.0025974025974025974
+Shinjuku,373,0,0.0
+Boston,365,6,0.01643835616438356
+Cupertino,354,10,0.02824858757062147
+Columbus,324,1,0.0030864197530864196
+Erode,319,0,0.0
+Munich,315,0,0.0
+Athens,310,1,0.0032258064516129032
+Vienna,306,0,0.0
+Gothenburg,306,0,0.0
+Rome,292,0,0.0
+Boardman,291,0,0.0
+Vancouver,279,1,0.0035842293906810036
+Milpitas,275,7,0.025454545454545455
+Boulder,255,15,0.058823529411764705
+Budapest,251,0,0.0
+Colombo,237,0,0.0
+San Antonio,229,5,0.021834061135371178
+Laguna Beach,225,0,0.0
+Zagreb,220,0,0.0
+Pozuelo de Alarcon,218,0,0.0
+Phoenix,209,6,0.028708133971291867
+Taguig,208,0,0.0
+Ningbo,198,0,0.0
+Dubai,197,1,0.005076142131979695
+Indore,188,0,0.0
+Gurgaon,180,0,0.0
+Bucharest,177,0,0.0
+Yokohama,174,1,0.005747126436781609
+Charlotte,174,3,0.017241379310344827
+Eau Claire,170,0,0.0
+Lille,170,0,0.0
+Redmond,167,1,0.005988023952095809
+Calgary,167,2,0.011976047904191617
+Burnaby,159,0,0.0
+Lyon,156,0,0.0
+Kitchener,150,0,0.0
+Krakow,149,0,0.0
+Oakland,146,7,0.04794520547945205
+Redwood City,142,1,0.007042253521126761
+Hanoi,140,0,0.0
+Lake Oswego,139,0,0.0
+Piscataway Township,138,0,0.0
+Auckland,132,0,0.0
+Bilbao,129,0,0.0
+Quezon City,127,0,0.0
+Evanston,125,1,0.008
+Santiago,124,0,0.0
+Portland,121,2,0.01652892561983471
+Jaipur,120,0,0.0
+Riyadh,119,0,0.0
+Saint Petersburg,116,0,0.0
+Jeddah,111,0,0.0
+Montevideo,106,0,0.0
+Denver,106,2,0.018867924528301886
+Kharagpur,104,0,0.0
+Jersey City,103,3,0.02912621359223301
+Malaga,100,0,0.0
+Oviedo,98,0,0.0
+Manchester,98,0,0.0
+Ashburn,98,0,0.0
+San Mateo,97,3,0.030927835051546393
+Chuo,95,0,0.0
+Lagos,94,0,0.0
+Petaling Jaya,89,0,0.0
+Makati,88,0,0.0
+Nashville,87,4,0.04597701149425287
+Wroclaw,82,0,0.0
+Lucknow,81,0,0.0
+Minneapolis,80,2,0.025
+Copenhagen,80,0,0.0
+Egham,78,0,0.0
+Medellin,78,0,0.0
+Santa Fe,77,0,0.0
+Orlando,77,1,0.012987012987012988
+Cork,76,0,0.0
+Detroit,76,1,0.013157894736842105
+Poznan,69,0,0.0
+Villeneuve-d'Ascq,66,0,0.0
+Shibuya,66,0,0.0
+Akron,66,0,0.0
+Perth,65,0,0.0
+Canterbury,63,0,0.0
+Oxford,62,0,0.0
+University Park,61,0,0.0
+Chandigarh,61,0,0.0
+Wellesley,60,0,0.0
+Rexburg,59,0,0.0
+Chiyoda,59,0,0.0
+Lahore,59,0,0.0
+Ankara,58,0,0.0
+Karachi,58,0,0.0
+Brussels,58,0,0.0
+Kampar,58,0,0.0
+Subang Jaya,56,0,0.0
+Leeds,56,0,0.0
+Courbevoie,55,0,0.0
+Utrecht,54,0,0.0
+Rio de Janeiro,52,0,0.0
+Bratislava,51,0,0.0
+Zhongli District,51,0,0.0
+Kalamazoo,47,0,0.0
+Fresno,47,1,0.02127659574468085
+Indianapolis,44,1,0.022727272727272728
+Cologne,44,0,0.0
+Villafranca del Castillo,44,0,0.0
+Frankfurt,43,0,0.0
+Vilnius,42,0,0.0
+South San Francisco,41,2,0.04878048780487805
+Turin,41,0,0.0
+Cincinnati,40,1,0.025
+Bandung,39,0,0.0
+Riga,38,0,0.0
+Avon,38,0,0.0
+Patna,37,0,0.0
+Rosario,37,0,0.0
+Birmingham,37,0,0.0
+Kansas City,37,2,0.05405405405405406
+Vincennes,37,0,0.0
+Cali,36,0,0.0
+Zaragoza,36,0,0.0
+East Lansing,35,0,0.0
+Oslo,35,0,0.0
+Brest,34,0,0.0
+Tampa,34,0,0.0
+Salford,33,0,0.0
+Mechelen,33,0,0.0
+Noida,33,0,0.0
+Glasgow,33,0,0.0
+Maracaibo,32,0,0.0
+Alicante,32,0,0.0
+Quimper,32,0,0.0
+Sacramento,32,1,0.03125
+Dusseldorf,32,0,0.0
+Coffeyville,31,0,0.0
+Aalborg,31,0,0.0
+Raleigh,30,0,0.0
+Amberg,30,0,0.0
+Oshkosh,30,0,0.0
+Ciudad Real,30,0,0.0
+Santa Monica,29,0,0.0
+Bellingham,29,0,0.0
+Ottawa,28,1,0.03571428571428571
+San Marcos,28,1,0.03571428571428571
+Tempe,28,1,0.03571428571428571
+Curitiba,28,0,0.0
+Miami,28,1,0.03571428571428571
+Liverpool,27,0,0.0
+Bordeaux,27,0,0.0
+Osijek,26,0,0.0
+Katowice,26,0,0.0
+Brampton,25,0,0.0
+Goose Creek,25,1,0.04
+Bhubaneswar,25,0,0.0
+Monterrey,24,0,0.0
+Naples,24,0,0.0
+Almeria,24,0,0.0
+Camden,24,0,0.0
+Chico,24,0,0.0
+Mississauga,24,0,0.0
+McAllen,23,0,0.0
+Oneonta,23,0,0.0
+Edmonton,23,0,0.0
+Antalya,23,0,0.0
+Tallinn,23,0,0.0
+Salt Lake City,23,0,0.0
+Westlake Village,23,0,0.0
+Ramat Gan,22,0,0.0
+Kochi,21,0,0.0
+Ipoh,21,0,0.0
+Schagen,21,0,0.0
+Helsinki,21,0,0.0
+Casablanca,20,0,0.0
+Thessaloniki,20,0,0.0
+Collegeville,20,0,0.0
+Beijing,20,0,0.0
+Plano,20,0,0.0
+Neipu Township,20,0,0.0
+Geneva,20,0,0.0
+Quebec City,20,0,0.0
+Berkeley,20,0,0.0
+Cagliari,19,0,0.0
+Tigard,19,1,0.05263157894736842
+Hayward,19,0,0.0
+Dundalk,19,1,0.05263157894736842
+Leusden,19,0,0.0
+Issy-les-Moulineaux,19,0,0.0
+Nantes,18,0,0.0
+Chamblee,18,0,0.0
+Rotterdam,18,0,0.0
+Padua,18,0,0.0
+Adelaide,18,0,0.0
+The Hague,18,0,0.0
+Sherbrooke,18,0,0.0
+Zhudong Township,17,0,0.0
+Szczecin,17,0,0.0
+Madison,17,0,0.0
+Dahlonega,17,0,0.0
+Fukui,17,0,0.0
+Overland Park,17,0,0.0
+Bournemouth,17,0,0.0
+Menlo Park,17,0,0.0
+Minxiong Township,17,0,0.0
+Kosice,16,0,0.0
+Louisville,16,0,0.0
+Sofia,16,0,0.0
+Brno,16,0,0.0
+Minsk,16,0,0.0
+Chevilly Larue,16,0,0.0
+Guatemala City,16,0,0.0
+Omaha,15,3,0.2
+Santa Ana,15,0,0.0
+Bellevue,15,1,0.06666666666666667
+Hallein,15,0,0.0
+Manaus,15,0,0.0
+Lehi,15,0,0.0
+Council Bluffs,15,1,0.06666666666666667
+Porto Alegre,15,0,0.0
+Tunis,14,0,0.0
+St. Louis,14,0,0.0
+Skopje,14,0,0.0
+Sakai,14,0,0.0
+Salzburg,14,0,0.0
+Smyrna,14,0,0.0
+Prato,14,0,0.0
+Wheeling,14,0,0.0
+Navi Mumbai,14,0,0.0
+Altrincham,14,0,0.0
+Whitewater,13,0,0.0
+Breda,13,0,0.0
+Sant Cugat del Valles,13,0,0.0
+Charlottesville,13,0,0.0
+College Park,13,0,0.0
+Nairobi,12,0,0.0
+Appleton,12,0,0.0
+Woodbridge Township,12,0,0.0
+Surabaya,12,0,0.0
+Oude Meer,12,0,0.0
+North Richland Hills,11,0,0.0
+Miyazaki,11,0,0.0
+Makassar,11,0,0.0
+Lausanne,11,0,0.0
+Pueblo,11,0,0.0
+Shanghai,11,0,0.0
+Montigny-le-Bretonneux,11,0,0.0
+Richardson,10,0,0.0
+Valencia,10,0,0.0
+Ballinger,10,0,0.0
+Seville,10,0,0.0
+Faro,10,0,0.0
+Gijon,10,0,0.0
+Burlington,10,0,0.0
+Cyberjaya,9,0,0.0
+Saint-Ouen-l'Aumone,9,0,0.0
+Randburg,9,0,0.0
+Pleasanton,9,2,0.2222222222222222
+Aalen,9,0,0.0
+Medina,9,0,0.0
+Lewisville,9,0,0.0
+Antwerp,9,0,0.0
+Fareham,9,0,0.0
+Wrexham,9,0,0.0
+Westville,8,0,0.0
+Koszalin,8,0,0.0
+Anaheim,8,0,0.0
+Towson,8,0,0.0
+Barranquilla,8,0,0.0
+Farmington Hills,8,0,0.0
+Hangzhou,8,0,0.0
+Leuven,8,0,0.0
+Johnson City,8,0,0.0
+Arequipa,8,0,0.0
+Lexington,8,0,0.0
+Baltimore,8,0,0.0
+Springfield,8,0,0.0
+Taoyuan District,8,0,0.0
+Bellflower,8,0,0.0
+Belagavi,8,0,0.0
+Cape Town,8,0,0.0
+Campinas,8,0,0.0
+Panama City,8,0,0.0
+Furth,7,0,0.0
+Amersfoort,7,0,0.0
+Valparaiso,7,0,0.0
+Bath,7,0,0.0
+Zaoqiao Township,7,0,0.0
+Tucson,7,0,0.0
+Barrie,7,1,0.14285714285714285
+Shiocton,7,0,0.0
+Sabadell,7,0,0.0
+'s Hertogenbosch,7,0,0.0
+Stanford,7,0,0.0
+Metz,7,0,0.0
+Fort Collins,7,1,0.14285714285714285
+Ostrava,7,0,0.0
+Decin,7,0,0.0
+Greystones,7,0,0.0
+Eindhoven,7,0,0.0
+Ghent,7,0,0.0
+Iasi,7,0,0.0
+Lenoir,7,0,0.0
+White Plains,7,0,0.0
+Alba,7,0,0.0
+New Orleans,7,0,0.0
+Nottingham,7,0,0.0
+Groningen,7,0,0.0
+Elche,7,0,0.0
+Watford,6,0,0.0
+Honolulu,6,0,0.0
+Lincoln,6,0,0.0
+Lawrence Township,6,0,0.0
+Villanova,6,0,0.0
+Alexandria,6,0,0.0
+Santiago de Surco,6,0,0.0
+Sheffield,6,0,0.0
+Orem,6,0,0.0
+Newark,6,0,0.0
+Marlboro,6,0,0.0
+Guwahati,6,0,0.0
+Naha,6,0,0.0
+El Paso,6,0,0.0
+Izmir,6,0,0.0
+Hradec Kralove,6,0,0.0
+Herzliya,6,0,0.0
+Chisinau,6,0,0.0
+Caracas,6,0,0.0
+Cairo,6,0,0.0
+Clermont-Ferrand,6,0,0.0
+Sandy Springs,6,1,0.16666666666666666
+Barnsley,6,0,0.0
+Tallahassee,6,0,0.0
+Tbilisi,6,0,0.0
+Brookline,6,0,0.0
+Bremen,6,0,0.0
+Ridgewood,6,0,0.0
+Carrollton,6,0,0.0
+Stuttgart,6,0,0.0
+Jacksonville,5,0,0.0
+Kumamoto,5,0,0.0
+San Salvador,5,0,0.0
+Bothell,5,0,0.0
+Thornton,5,0,0.0
+Pryor,3,0,0.0
+Bozeman,3,0,0.0
+Boise,3,0,0.0

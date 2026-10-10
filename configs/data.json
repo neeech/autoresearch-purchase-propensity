@@ -1,0 +1,8 @@
+{
+  "raw_path": "data/raw/data.csv",
+  "output_dir": "data/processed",
+  "report_dir": "reports",
+  "validation_start": "2017-05-01",
+  "test_start": "2017-06-01",
+  "missing_transactions_mean_zero": true
+}
