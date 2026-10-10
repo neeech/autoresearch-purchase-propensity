@@ -22,6 +22,9 @@ def load_data(directory, split):
     forbidden = {'target', 'transactions', 'transactionRevenue', 'fullVisitorID', 'date', 'session_row_id'}
     if forbidden.intersection(x.columns):
         raise ValueError('Outcome or identifiers included in features')
+    if 'history' in x:
+        # Parquet may deserialize nested lists as NumPy arrays. Keep the prompt contract.
+        x['history'] = x.history.map(lambda events: [] if events is None else list(events))
     return x, y.target.to_numpy()
 
 

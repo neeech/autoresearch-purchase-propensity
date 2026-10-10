@@ -36,8 +36,10 @@ investigá explícitamente si agregar el historial mejora la validación. Vos el
 las agregaciones en `features.py`: contadores, tasas, promedios, recencias,
 tendencias o ventanas de 7/30 días. Compará su contribución contra la baseline.
 
-`frame['history']` contiene una lista de registros por fila. Cada registro incluye
-los campos normalizados de una sesión anterior, `purchased` (0/1) y `days_ago`.
+`frame['history']` contiene una lista de registros por fila. El cargador fijo
+normaliza los arrays provenientes de Parquet a listas Python; sin sesiones
+previas se recibe `[]`. Cada registro incluye los campos normalizados de una
+sesión anterior, `purchased` (0/1) y `days_ago`.
 El contexto `data.history_fields` enumera los campos disponibles de esos registros.
 Puede contener faltantes como `None`. Sólo aparecen sesiones de días estrictamente
 anteriores del mismo usuario, también durante validación. No hay IDs, fechas
