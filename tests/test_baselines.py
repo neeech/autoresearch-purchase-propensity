@@ -1,11 +1,30 @@
 import unittest
+from unittest.mock import patch
 import numpy as np
 import pandas as pd
 from autoresearch_purchase_propensity.evaluate import metrics
 from autoresearch_purchase_propensity.modeling import build_model
+from autoresearch_purchase_propensity.features import build_features
 
 
 class EvaluationTests(unittest.TestCase):
+    def test_engineered_column_is_used_after_feature_creation(self):
+        frame = pd.DataFrame({'hits': [1, 2, 3, 4, 5, 6]})
+
+        def engineered(frame):
+            result = build_features(frame)
+            result['hits_squared'] = result.hits ** 2
+            return result
+
+        config = {'seed': 42, 'min_category_frequency': 2,
+                  'logistic': {'solver': 'liblinear', 'C': 1., 'max_iter': 100}}
+        with patch('autoresearch_purchase_propensity.modeling.build_features', engineered):
+            model = build_model(frame.columns.tolist(), config)
+        model.fit(frame, [0, 0, 0, 1, 1, 1])
+        names = model.named_steps['features'].get_feature_names_out()
+        self.assertIn('numeric__hits_squared', names)
+        self.assertEqual(model.predict_proba(frame).shape, (6, 2))
+
     def test_constant_reference_and_invalid_predictions(self):
         result = metrics([0, 0, 0, 1], [.25]*4)
         self.assertAlmostEqual(result['average_precision'], .25)

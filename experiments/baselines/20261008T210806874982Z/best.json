@@ -1,7 +1,0 @@
-{
-  "run_id": "20261008T210806874982Z",
-  "variant": "session_history",
-  "validation_log_loss": 0.03757168233446388,
-  "model_path": "experiments/baselines/20261008T210806874982Z/session_history/model.joblib",
-  "test_evaluated": false
-}

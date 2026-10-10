@@ -1,6 +1,6 @@
 {
   "data_dir": "data/processed",
-  "output_root": "experiments/baselines",
+  "output_root": "experiments/training",
   "seed": 42,
   "logistic": {
     "C": 1.0,

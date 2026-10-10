@@ -2,12 +2,11 @@
   "config": {
     "raw_path": "data/raw/data.csv",
     "output_dir": "data/processed",
-    "report_dir": "reports",
     "validation_start": "2017-05-01",
     "test_start": "2017-06-01",
     "missing_transactions_mean_zero": true
   },
-  "raw_sha256": "55793302dd998c9c2da014df95c83d1e938e16f903590c932a229ad591b024c5",
+  "raw_sha256": "e9e11a97cdabed26e02789316cf9c9076c5ea1bf085c7ee4ff76c355a5e5b882",
   "features": [
     "visitNumber",
     "bounces",
@@ -20,20 +19,9 @@
     "deviceCategory",
     "country",
     "city",
-    "pageviews_missing",
-    "timeOnSite_missing",
-    "history_sessions",
-    "history_purchase_sessions",
-    "has_history",
-    "history_purchase_rate",
-    "history_mean_hits",
-    "history_mean_pageviews",
-    "history_mean_time_on_site",
-    "days_since_last_session",
-    "days_since_last_purchase",
+    "history",
     "day_of_week",
-    "month",
-    "is_weekend"
+    "month"
   ],
   "excluded": [
     "fullVisitorID",
@@ -70,9 +58,25 @@
     }
   },
   "history_policy": "strictly earlier days, updated sequentially across partitions",
+  "history_format": "list of prior session records, with purchased and days_ago; no aggregates",
+  "history_fields": [
+    "visitNumber",
+    "bounces",
+    "hits",
+    "pageviews",
+    "timeOnSite",
+    "source",
+    "channelGrouping",
+    "browser",
+    "deviceCategory",
+    "country",
+    "city",
+    "purchased",
+    "days_ago"
+  ],
   "target_assumption": "missing transactions means zero",
   "bounce_policy": "null means no bounce; encoded as 0/1 per user-provided definition",
   "versions": {
-    "pandas": "3.0.0"
+    "pandas": "3.0.6"
   }
 }

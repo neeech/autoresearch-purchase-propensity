@@ -1,4 +1,0 @@
-{
-  "superseded_by": "experiments/baselines/20261008T210933339558Z",
-  "reason": "Initial diagnostic run used global sklearn 1.8.0; authoritative run uses project environment and importable model transforms. Use latest.json for reloadable artifacts."
-}

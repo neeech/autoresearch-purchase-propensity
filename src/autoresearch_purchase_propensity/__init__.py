@@ -1,2 +1,1 @@
-def main() -> None:
-    print("Hello from autoresearch-purchase-propensity!")
+"""Purchase propensity experiments with a simple autoresearch loop."""

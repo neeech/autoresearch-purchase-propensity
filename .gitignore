@@ -1,6 +1,8 @@
 .venv/
+.venv-win/
+.tools/
+experiments/autoresearch/
 __pycache__/
 *.pyc
-data/processed/*.parquet
-experiments/baselines/**/model.joblib
-experiments/baselines/**/validation_predictions.parquet
+data/processed/
+experiments/training/

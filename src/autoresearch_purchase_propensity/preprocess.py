@@ -4,7 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import pandas as pd
-from .features import add_history
+from .history import EXCLUDED as HISTORY_EXCLUDED, add_history
 
 REQUIRED = ['fullVisitorID', 'visitNumber', 'date', 'bounces', 'hits', 'pageviews',
             'timeOnSite', 'transactionRevenue', 'transactions', 'source',
@@ -38,9 +38,6 @@ def load_sessions(path, missing_transactions_mean_zero=True):
     if not data.bounces.dropna().isin([0, 1]).all():
         raise ValueError('bounces must be 0, 1 or null')
     data['bounces'] = data.bounces.fillna(0).astype('int8')
-    # Duration/pageview absence remains unknown.
-    for col in ['pageviews', 'timeOnSite']:
-        data[f'{col}_missing'] = data[col].isna().astype('int8')
     return data
 
 
@@ -62,10 +59,9 @@ def main():
     args = parser.parse_args()
     config = json.loads(Path(args.config).read_text())
     sessions = load_sessions(config['raw_path'], config['missing_transactions_mean_zero'])
-    from .eda_detail import run as generate_deep_report
-    # Associations use train only; raw quality audit covers all periods.
-    generate_deep_report(config)
     enriched = add_history(sessions)
+    enriched['day_of_week'] = enriched.date.dt.dayofweek.astype('int8')
+    enriched['month'] = enriched.date.dt.month.astype('int8')
     parts = temporal_split(enriched, config['validation_start'], config['test_start'])
     out = Path(config['output_dir'])
     out.mkdir(parents=True, exist_ok=True)
@@ -76,19 +72,23 @@ def main():
         part = part.sort_values(['date', 'session_row_id'])
         part[features].to_parquet(out / f'{name}_X.parquet', index=False)
         part[['session_row_id', 'target']].to_parquet(out / f'{name}_y.parquet', index=False)
-        part[['session_row_id', 'fullVisitorID', 'date', 'has_history']].to_parquet(out / f'{name}_metadata.parquet', index=False)
+        metadata = part[['session_row_id', 'fullVisitorID', 'date']].copy()
+        metadata['has_history'] = part.history.map(bool).astype('int8')
+        metadata.to_parquet(out / f'{name}_metadata.parquet', index=False)
         summary[name] = {'rows': len(part), 'positives': int(part.target.sum()),
                          'purchase_rate': float(part.target.mean()),
-                         'with_prior_day_history_rate': float(part.has_history.mean()),
+                         'with_prior_day_history_rate': float(metadata.has_history.mean()),
                          'start': str(part.date.min().date()), 'end': str(part.date.max().date())}
     manifest = {'config': config, 'raw_sha256': hashlib.sha256(Path(config['raw_path']).read_bytes()).hexdigest(),
                 'features': features, 'excluded': excluded, 'splits': summary,
                 'history_policy': 'strictly earlier days, updated sequentially across partitions',
+                'history_format': 'list of prior session records, with purchased and days_ago; no aggregates',
+                'history_fields': [name for name in sessions if name not in HISTORY_EXCLUDED]
+                                  + ['purchased', 'days_ago'],
                 'target_assumption': 'missing transactions means zero',
                 'bounce_policy': 'null means no bounce; encoded as 0/1 per user-provided definition',
                 'versions': {'pandas': pd.__version__}}
     (out / 'manifest.json').write_text(json.dumps(manifest, indent=2))
-    (Path(config['report_dir']) / 'split_summary.json').write_text(json.dumps(summary, indent=2))
     print(json.dumps(summary, indent=2))
 
 
