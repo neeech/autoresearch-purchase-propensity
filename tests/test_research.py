@@ -8,7 +8,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from autoresearch_purchase_propensity.research import EDITABLE, ROOT, apply_proposal, git, main, propose, retry_delay, run, train
+from autoresearch_purchase_propensity.research import EDITABLE, ROOT, RequestLimiter, apply_proposal, git, main, propose, retry_delay, run, train
 
 
 class ResearchTests(unittest.TestCase):
@@ -241,6 +241,73 @@ with (out / 'results.csv').open('w', newline='') as file:
         with self.assertRaises(subprocess.TimeoutExpired):
             train(self.root, {'data_dir': str(self.root / 'data/processed')}, self.output, timeout=1)
         self.assertLess(time.monotonic() - started, 10)
+
+
+class RateLimitTests(unittest.TestCase):
+    def test_spaces_requests_and_counts_elapsed_training_time(self):
+        now = [0.0]
+        def advance(seconds):
+            now[0] += seconds
+        limiter = RequestLimiter(10)
+        with patch('autoresearch_purchase_propensity.research.time.monotonic', side_effect=lambda: now[0]), \
+                patch('autoresearch_purchase_propensity.research.time.sleep', side_effect=advance) as sleep:
+            limiter.wait()
+            sleep.assert_not_called()
+            now[0] += 2  # Response/training took two seconds.
+            limiter.wait()
+            sleep.assert_called_once_with(4)
+            self.assertEqual(now[0], 6)
+            now[0] += 20  # No additional waiting after a slow experiment.
+            limiter.wait()
+            self.assertEqual(sleep.call_count, 1)
+            limiter.wait()
+            self.assertEqual(now[0], 32)
+
+    def test_retries_and_next_proposal_share_limit_and_retry_after(self):
+        from io import BytesIO
+        from urllib.error import HTTPError
+        for retry_after, expected in [('2', [0, 6, 12]), ('9', [0, 9, 15])]:
+            now, starts = [0.0], []
+            proposal = {'hypothesis': 'Test', 'files': {EDITABLE[0]: 'source'}}
+            def request(*args, **kwargs):
+                starts.append(now[0])
+                if len(starts) == 1:
+                    raise HTTPError('https://api.groq.com', 429, 'Rate limit', {'Retry-After': retry_after},
+                                    BytesIO(b'{"error":{"message":"Wait"}}'))
+                return BytesIO(json.dumps({'choices': [{'message': {'content': json.dumps(proposal)}}]}).encode())
+            def advance(seconds):
+                now[0] += seconds
+            limiter = RequestLimiter(10)
+            with self.subTest(retry_after=retry_after), \
+                    patch.dict(os.environ, {'GROQ_API_KEY': 'test-key'}, clear=True), \
+                    patch('autoresearch_purchase_propensity.research.time.monotonic', side_effect=lambda: now[0]), \
+                    patch('autoresearch_purchase_propensity.research.time.sleep', side_effect=advance), \
+                    patch('autoresearch_purchase_propensity.research.urlopen', side_effect=request):
+                self.assertEqual(propose({'instructions': 'Test'}, limiter=limiter), proposal)
+                self.assertEqual(propose({'instructions': 'Test'}, limiter=limiter), proposal)
+            self.assertEqual(starts, expected)
+
+    def test_cli_shares_limiter_and_rejects_invalid_rpm_before_run(self):
+        def fake_run(root, output, proposer, experiments, timeout):
+            proposer({'instructions': 'First'})
+            proposer({'instructions': 'Second'})
+            return {'best_log_loss': .5}
+        with patch.dict(os.environ, {'GEMINI_API_KEY': 'test-key'}, clear=True), \
+                patch('sys.argv', ['autoresearch', '--provider', 'gemini', '--rpm', '10']), \
+                patch('autoresearch_purchase_propensity.research.run', side_effect=fake_run), \
+                patch('autoresearch_purchase_propensity.research.propose') as proposal, \
+                patch('builtins.print'):
+            main()
+        first, second = proposal.call_args_list
+        self.assertIs(first.kwargs['limiter'], second.kwargs['limiter'])
+        self.assertEqual(first.kwargs['limiter'].interval, 6)
+        for rpm in ['0', '-1', '1.5', 'nan']:
+            with self.subTest(rpm=rpm), patch('sys.argv', ['autoresearch', '--rpm', rpm]), \
+                    patch('sys.stderr'), patch('autoresearch_purchase_propensity.research.run') as run_loop:
+                with self.assertRaises(SystemExit) as error:
+                    main()
+                self.assertEqual(error.exception.code, 2)
+                run_loop.assert_not_called()
 
 
 class ProviderTests(unittest.TestCase):

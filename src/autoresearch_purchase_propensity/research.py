@@ -45,7 +45,27 @@ def retry_delay(retry_after, attempt):
     return max(0, delay) if math.isfinite(delay) else fallback
 
 
-def propose(context, model=None, provider='groq'):
+class RequestLimiter:
+    """Space request starts evenly; share one instance across the whole run."""
+
+    def __init__(self, rpm):
+        if not isinstance(rpm, int) or rpm < 1:
+            raise ValueError('RPM must be a positive integer')
+        self.interval = 60 / rpm
+        self.last_request = None
+
+    def wait(self):
+        if self.last_request is not None:
+            remaining = self.last_request + self.interval - time.monotonic()
+            if remaining > 0:
+                print(f'  RPM limit: waiting {remaining:g}s', flush=True)
+            while remaining > 0:
+                time.sleep(min(remaining, 60))
+                remaining = self.last_request + self.interval - time.monotonic()
+        self.last_request = time.monotonic()
+
+
+def propose(context, model=None, provider='groq', limiter=None):
     """Request a proposal, with up to three attempts for transient API failures."""
     if provider not in API_KEYS:
         raise ValueError(f'Unknown API provider: {provider}')
@@ -81,6 +101,8 @@ def propose(context, model=None, provider='groq'):
     for attempt in range(3):
         retry_after = None
         try:
+            if limiter is not None:
+                limiter.wait()
             with urlopen(request, timeout=180) as response:
                 result = json.load(response)
             if provider == 'groq':
@@ -308,10 +330,13 @@ def main():
     parser.add_argument('--timeout', type=int, default=180)
     parser.add_argument('--provider', choices=DEFAULT_MODELS, default='groq')
     parser.add_argument('--model', help='Model ID; defaults to openai/gpt-oss-120b (Groq) or gemini-3.8-flash (Gemini)')
+    parser.add_argument('--rpm', type=int, help='Maximum API requests per minute, including retries; evenly spaced')
     parser.add_argument('--proposals', type=Path, help='JSON list of saved proposals; no API calls')
     args = parser.parse_args()
     if args.experiments < 0 or args.timeout < 1:
         parser.error('Experiments must be >= 0 and timeout must be > 0')
+    if args.rpm is not None and args.rpm < 1:
+        parser.error('--rpm must be a positive integer')
     if args.proposals:
         saved = json.loads(args.proposals.read_text(encoding='utf-8'))
         if not isinstance(saved, list) or len(saved) < args.experiments:
@@ -322,7 +347,9 @@ def main():
         key_name = API_KEYS[args.provider]
         if args.experiments and not os.environ.get(key_name):
             parser.error(f'Set {key_name} or pass --proposals')
-        proposer = lambda context: propose(context, args.model, args.provider)
+        limiter = RequestLimiter(args.rpm) if args.rpm is not None else None
+        options = {'limiter': limiter} if limiter is not None else {}
+        proposer = lambda context: propose(context, args.model, args.provider, **options)
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
     summary = run(ROOT, ROOT / 'experiments/autoresearch' / stamp, proposer, args.experiments, args.timeout)
     print(json.dumps(summary, indent=2))

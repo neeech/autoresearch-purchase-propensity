@@ -29,13 +29,21 @@ definir `GEMINI_API_KEY` en el entorno. Ejemplo en PowerShell:
 
 ```powershell
 $env:GEMINI_API_KEY = 'TU_API_KEY'
-uv run autoresearch --provider gemini --model gemini-3.8-flash --experiments 10 --timeout 600
+uv run autoresearch --provider gemini --model gemini-3.8-flash --rpm 10 --experiments 10 --timeout 600
 ```
 
 Con `--provider gemini`, el modelo predeterminado es `gemini-3.8-flash`, por lo
 que `--model` es opcional. Usa la API nativa `generateContent` con respuesta JSON
 estructurada y los mismos reintentos que Groq. Ninguna de las dos claves se pasa
 al entrenamiento. Commiteá los cambios antes de iniciar una nueva ejecución.
+
+`--rpm N` limita las llamadas a la API por minuto, incluidos los reintentos,
+para cualquiera de los proveedores. Las llamadas se espacian al menos `60 / N`
+segundos: `--rpm 10` deja 6 segundos entre inicios. La primera llamada es inmediata;
+el tiempo de respuesta y entrenamiento cuenta como espera. `Retry-After` también
+se respeta. Es un máximo, no una cantidad obligatoria; sin `--rpm` no se agrega
+esta espera. El límite es local a esta ejecución y no controla tokens ni llamadas
+de otros procesos que compartan la clave.
 
 Sólo baselines, sin API:
 
