@@ -75,7 +75,7 @@ def propose(context, model=None, provider='groq'):
         payload = {'systemInstruction': {'parts': [{'text': context['instructions']}]},
                    'contents': [{'role': 'user', 'parts': [{'text': user_content}]}],
                    'generationConfig': {'maxOutputTokens': 16384,
-                                        'responseFormat': {'text': {'mimeType': 'application/json',
+                                        'responseFormat': {'text': {'mimeType': 'APPLICATION_JSON',
                                                                     'schema': schema}}}}
     request = Request(url, json.dumps(payload).encode(), headers)
     for attempt in range(3):

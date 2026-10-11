@@ -262,7 +262,8 @@ class ProviderTests(unittest.TestCase):
         payload = json.loads(sent.data)
         self.assertEqual(payload['systemInstruction']['parts'][0]['text'], context['instructions'])
         self.assertEqual(json.loads(payload['contents'][0]['parts'][0]['text']), {'files': {}, 'history': []})
-        self.assertEqual(payload['generationConfig']['responseFormat']['text']['mimeType'], 'application/json')
+        # TextResponseFormat.MimeType is a protobuf enum, not a MIME string.
+        self.assertEqual(payload['generationConfig']['responseFormat']['text']['mimeType'], 'APPLICATION_JSON')
         self.assertNotIn('gemini-secret', sent.full_url + json.dumps(payload))
 
     def test_gemini_rate_limit_retries_and_redacts_error(self):
