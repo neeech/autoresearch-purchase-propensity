@@ -20,9 +20,22 @@ iniciar el loop, que requiere un checkout limpio:
 uv run autoresearch --experiments 10 --timeout 180
 ```
 
-Usa una llamada HTTP a Groq, sin SDK ni framework de agentes. El LLM inicial es
-`openai/gpt-oss-120b`, configurable con `--model`; su disponibilidad depende
-del proveedor. La clave no se pasa al entrenamiento.
+Usa HTTP directamente, sin SDK ni framework de agentes. Groq es el proveedor
+predeterminado y usa `openai/gpt-oss-120b`. El modelo se puede cambiar con
+`--model`; su disponibilidad depende del proveedor.
+
+Para usar Gemini con una clave de [Google AI Studio](https://aistudio.google.com/apikey),
+definir `GEMINI_API_KEY` en el entorno. Ejemplo en PowerShell:
+
+```powershell
+$env:GEMINI_API_KEY = 'TU_API_KEY'
+uv run autoresearch --provider gemini --model gemini-3.8-flash --experiments 10 --timeout 600
+```
+
+Con `--provider gemini`, el modelo predeterminado es `gemini-3.8-flash`, por lo
+que `--model` es opcional. Usa la API nativa `generateContent` con respuesta JSON
+estructurada y los mismos reintentos que Groq. Ninguna de las dos claves se pasa
+al entrenamiento. Commiteá los cambios antes de iniciar una nueva ejecución.
 
 Sólo baselines, sin API:
 
@@ -63,6 +76,13 @@ Primero se miden las baselines constante y logística usando la sesión actual.
 Después, el prompt pide investigar el aporte del historial. Cada candidato
 se commitea y se evalúa en un intérprete nuevo. Sólo se conserva una mejora
 estricta; empates, errores y timeouts vuelven al mejor commit.
+
+Cada llamada a la API tiene hasta tres intentos para errores transitorios,
+con `Retry-After` si el proveedor lo indica o esperas de 2 y 4 segundos.
+También se reintenta un fallo de generación de JSON. Un request inválido no
+se repite automáticamente con el mismo contenido. Si se agotan los intentos,
+el error aparece en consola, se registra y el loop sigue con el próximo ensayo
+desde el mejor commit. Los reintentos internos no consumen ensayos adicionales.
 
 ## Resultados
 

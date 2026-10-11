@@ -8,7 +8,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from autoresearch_purchase_propensity.research import EDITABLE, ROOT, apply_proposal, git, propose, run, train
+from autoresearch_purchase_propensity.research import EDITABLE, ROOT, apply_proposal, git, main, propose, retry_delay, run, train
 
 
 class ResearchTests(unittest.TestCase):
@@ -140,17 +140,69 @@ with (out / 'results.csv').open('w', newline='') as file:
         self.assertIsNone(summary['best_log_loss'])
         self.assertEqual((Path(summary['worktree']) / 'src/autoresearch_purchase_propensity/history.py').read_text(), '# fixed history\n')
 
-    def test_api_error_stops_after_baselines_and_is_recorded(self):
+    def test_api_failure_is_recorded_and_loop_continues_from_best(self):
         from urllib.error import HTTPError
-
+        calls = []
         def unavailable(context):
-            raise HTTPError('https://api.groq.com', 429, 'Quota exceeded', {}, None)
+            calls.append(context)
+            if len(calls) == 1:
+                raise HTTPError('https://api.groq.com', 429, 'Quota exceeded', {}, None)
+            return self.proposal(.4)
 
-        summary = run(self.root, self.output, unavailable, experiments=3, timeout=30)
+        summary = run(self.root, self.output, unavailable, experiments=2, timeout=30)
         entries = [json.loads(line) for line in (self.output / 'history.jsonl').read_text().splitlines()]
-        self.assertEqual([entry['status'] for entry in entries], ['baseline', 'failed'])
-        self.assertEqual(summary['best_commit'], self.initial)
+        self.assertEqual([entry['status'] for entry in entries], ['baseline', 'failed', 'keep'])
+        self.assertEqual(entries[2]['parent_commit'], self.initial)
+        self.assertEqual(summary['best_log_loss'], .4)
         self.assertIn('429', entries[1]['error'])
+
+    def test_api_retry_after_and_backoff_then_success(self):
+        from io import BytesIO
+        from urllib.error import HTTPError, URLError
+        error = HTTPError('https://api.groq.com', 429, 'Rate limit', {'Retry-After': '7'},
+                          BytesIO(b'{"error":{"message":"Wait"}}'))
+        response = {'choices': [{'message': {'content': json.dumps(self.proposal(.4))}}]}
+        with patch.dict(os.environ, {'GROQ_API_KEY': 'test-key'}), \
+                patch('autoresearch_purchase_propensity.research.urlopen',
+                      side_effect=[error, URLError('Connection lost'), BytesIO(json.dumps(response).encode())]) as request, \
+                patch('autoresearch_purchase_propensity.research.time.sleep') as sleep:
+            result = propose({'instructions': 'Start with baselines'}, 'test-model')
+        self.assertEqual(result, self.proposal(.4))
+        self.assertEqual(request.call_count, 3)
+        self.assertEqual([call.args[0] for call in sleep.call_args_list], [7, 4])
+
+    def test_api_retry_budget_is_bounded(self):
+        from io import BytesIO
+        from urllib.error import HTTPError
+        errors = [HTTPError('https://api.groq.com', 503, 'Unavailable', {},
+                            BytesIO(b'{"error":{"message":"Temporary failure"}}')) for _ in range(3)]
+        with patch.dict(os.environ, {'GROQ_API_KEY': 'test-key'}), \
+                patch('autoresearch_purchase_propensity.research.urlopen', side_effect=errors) as request, \
+                patch('autoresearch_purchase_propensity.research.time.sleep') as sleep:
+            with self.assertRaises(HTTPError):
+                propose({'instructions': 'Start with baselines'}, 'test-model')
+        self.assertEqual(request.call_count, 3)
+        self.assertEqual([call.args[0] for call in sleep.call_args_list], [2, 4])
+
+    def test_retry_after_http_date_and_invalid_header(self):
+        with patch('autoresearch_purchase_propensity.research.time.time', return_value=0):
+            self.assertEqual(retry_delay('Thu, 01 Jan 1970 00:00:09 GMT', 0), 9)
+        self.assertEqual(retry_delay('invalid', 1), 4)
+        self.assertEqual(retry_delay('nan', 0), 2)
+
+    def test_generated_json_failure_can_be_retried(self):
+        from io import BytesIO
+        from urllib.error import HTTPError
+        error = HTTPError('https://api.groq.com', 400, 'Bad Request', {},
+                          BytesIO(b'{"error":{"code":"json_validate_failed","message":"Invalid generated JSON"}}'))
+        response = {'choices': [{'message': {'content': json.dumps(self.proposal(.4))}}]}
+        with patch.dict(os.environ, {'GROQ_API_KEY': 'test-key'}), \
+                patch('autoresearch_purchase_propensity.research.urlopen',
+                      side_effect=[error, BytesIO(json.dumps(response).encode())]) as request, \
+                patch('autoresearch_purchase_propensity.research.time.sleep') as sleep:
+            self.assertEqual(propose({'instructions': 'Start with baselines'}, 'test-model'), self.proposal(.4))
+        self.assertEqual(request.call_count, 2)
+        sleep.assert_called_once_with(2)
 
     def test_llm_request_uses_prompt_and_returns_only_proposal(self):
         from io import BytesIO
@@ -166,6 +218,22 @@ with (out / 'results.csv').open('w', newline='') as file:
         self.assertNotIn('test-key', json.dumps(payload))
         self.assertEqual(context['instructions'], 'Start with baselines')
 
+    def test_llm_http_error_shows_provider_detail_without_api_key(self):
+        from io import BytesIO
+        from urllib.error import HTTPError
+        response = BytesIO(json.dumps({'error': {'message': 'Invalid request for test-key'}}).encode())
+        error = HTTPError('https://api.groq.com', 400, 'Bad Request', {}, response)
+        with patch.dict(os.environ, {'GROQ_API_KEY': 'test-key'}), \
+                patch('autoresearch_purchase_propensity.research.urlopen', side_effect=error) as request, \
+                patch('autoresearch_purchase_propensity.research.time.sleep') as sleep:
+            with self.assertRaises(HTTPError) as raised:
+                propose({'instructions': 'Start with baselines'}, 'test-model')
+        self.assertIn('400', str(raised.exception))
+        self.assertIn('Invalid request', str(raised.exception))
+        self.assertNotIn('test-key', str(raised.exception))
+        self.assertEqual(request.call_count, 1)
+        sleep.assert_not_called()
+
     def test_timeout_kills_actual_subprocess(self):
         path = self.root / 'src/autoresearch_purchase_propensity/train.py'
         path.write_text('import time\ntime.sleep(30)\n')
@@ -173,6 +241,97 @@ with (out / 'results.csv').open('w', newline='') as file:
         with self.assertRaises(subprocess.TimeoutExpired):
             train(self.root, {'data_dir': str(self.root / 'data/processed')}, self.output, timeout=1)
         self.assertLess(time.monotonic() - started, 10)
+
+
+class ProviderTests(unittest.TestCase):
+    def test_gemini_request_and_multipart_response(self):
+        from io import BytesIO
+        proposal = {'hypothesis': 'New feature', 'files': {EDITABLE[0]: 'def build_features(frame):\n    return frame\n'}}
+        content = json.dumps(proposal)
+        response = {'candidates': [{'finishReason': 'STOP', 'content': {'parts': [
+            {'thought': True, 'text': 'Internal reasoning'},
+            {'text': content[:20]}, {'text': content[20:]}]}}]}
+        context = {'instructions': 'Use only past sessions', 'files': {}, 'history': []}
+        with patch.dict(os.environ, {'GEMINI_API_KEY': 'gemini-secret'}, clear=True), \
+                patch('autoresearch_purchase_propensity.research.urlopen',
+                      return_value=BytesIO(json.dumps(response).encode())) as request:
+            self.assertEqual(propose(context, provider='gemini'), proposal)
+        sent = request.call_args.args[0]
+        self.assertEqual(sent.full_url, 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent')
+        self.assertEqual(sent.get_header('X-goog-api-key'), 'gemini-secret')
+        payload = json.loads(sent.data)
+        self.assertEqual(payload['systemInstruction']['parts'][0]['text'], context['instructions'])
+        self.assertEqual(json.loads(payload['contents'][0]['parts'][0]['text']), {'files': {}, 'history': []})
+        self.assertEqual(payload['generationConfig']['responseFormat']['text']['mimeType'], 'application/json')
+        self.assertNotIn('gemini-secret', sent.full_url + json.dumps(payload))
+
+    def test_gemini_rate_limit_retries_and_redacts_error(self):
+        from io import BytesIO
+        from urllib.error import HTTPError
+        errors = [HTTPError('https://generativelanguage.googleapis.com', 429, 'Too Many Requests',
+                            {'Retry-After': '9'}, BytesIO(b'{"error":{"code":429,"message":"Quota for gemini-secret","status":"RESOURCE_EXHAUSTED"}}'))
+                  for _ in range(3)]
+        with patch.dict(os.environ, {'GEMINI_API_KEY': 'gemini-secret'}, clear=True), \
+                patch('autoresearch_purchase_propensity.research.urlopen', side_effect=errors) as request, \
+                patch('autoresearch_purchase_propensity.research.time.sleep') as sleep:
+            with self.assertRaises(HTTPError) as raised:
+                propose({'instructions': 'Test'}, provider='gemini')
+        self.assertEqual(request.call_count, 3)
+        self.assertEqual([call.args[0] for call in sleep.call_args_list], [9, 9])
+        self.assertIn('Quota', str(raised.exception))
+        self.assertNotIn('gemini-secret', str(raised.exception))
+
+    def test_gemini_blocked_or_truncated_response_reports_reason(self):
+        from io import BytesIO
+        for response, reason in [({'promptFeedback': {'blockReason': 'SAFETY'}}, 'SAFETY'),
+                                 ({'candidates': [{'finishReason': 'MAX_TOKENS'}]}, 'MAX_TOKENS')]:
+            with self.subTest(reason=reason), \
+                    patch.dict(os.environ, {'GEMINI_API_KEY': 'test-key'}, clear=True), \
+                    patch('autoresearch_purchase_propensity.research.urlopen',
+                          return_value=BytesIO(json.dumps(response).encode())):
+                with self.assertRaisesRegex(RuntimeError, reason):
+                    propose({'instructions': 'Test'}, provider='gemini')
+
+    def test_provider_requires_its_own_key(self):
+        with patch.dict(os.environ, {'GROQ_API_KEY': 'test-key'}, clear=True):
+            with self.assertRaisesRegex(ValueError, 'GEMINI_API_KEY'):
+                propose({'instructions': 'Test'}, provider='gemini')
+        with self.assertRaisesRegex(ValueError, 'Unknown API provider'):
+            propose({}, provider='unknown')
+
+    def test_cli_selects_provider_and_model_and_allows_baseline_without_key(self):
+        for arguments, env, expected in [
+            (['--provider', 'gemini'], {'GEMINI_API_KEY': 'test-key'}, (None, 'gemini')),
+            (['--provider', 'gemini', '--model', 'custom-model'], {'GEMINI_API_KEY': 'test-key'}, ('custom-model', 'gemini')),
+            ([], {'GROQ_API_KEY': 'test-key'}, (None, 'groq')),
+            (['--provider', 'gemini', '--experiments', '0'], {}, None),
+        ]:
+            def fake_run(root, output, proposer, experiments, timeout):
+                if experiments:
+                    proposer({'instructions': 'Test'})
+                return {'best_log_loss': .5}
+            with self.subTest(arguments=arguments), patch.dict(os.environ, env, clear=True), \
+                    patch('sys.argv', ['autoresearch', *arguments]), \
+                    patch('autoresearch_purchase_propensity.research.run', side_effect=fake_run), \
+                    patch('autoresearch_purchase_propensity.research.propose') as proposal, \
+                    patch('builtins.print'):
+                main()
+                if expected:
+                    proposal.assert_called_once_with({'instructions': 'Test'}, *expected)
+                else:
+                    proposal.assert_not_called()
+
+    def test_training_removes_both_api_keys(self):
+        from unittest.mock import Mock
+        process = Mock()
+        process.wait.return_value = 1
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.dict(os.environ, {'GROQ_API_KEY': 'groq-secret', 'GEMINI_API_KEY': 'gemini-secret'}), \
+                patch('autoresearch_purchase_propensity.research.subprocess.Popen', return_value=process) as popen:
+            with self.assertRaisesRegex(RuntimeError, 'Training failed'):
+                train(Path(directory), {}, Path(directory) / 'run', 10)
+        self.assertNotIn('GROQ_API_KEY', popen.call_args.kwargs['env'])
+        self.assertNotIn('GEMINI_API_KEY', popen.call_args.kwargs['env'])
 
 
 if __name__ == '__main__':
