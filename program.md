@@ -18,7 +18,9 @@ con train, dentro del pipeline.
 `modeling.py` define `build_model(columns, config)`: devuelve un estimador con
 `fit(X, y)` y `predict_proba(X)`. Conservá las interfaces y usá semilla 42. Empezá
 por el modelo logístico suministrado. Podés cambiarlo después usando dependencias
-ya instaladas.
+ya instaladas. Un ensayo que modifica sólo `modeling.py` es válido: podés cambiar
+la familia del estimador, sus hiperparámetros o el preprocesamiento aprendido,
+manteniendo las features actuales.
 
 Datos, target, disponibilidad del pasado, splits, entrenamiento y evaluación son fijos.
 No leas archivos, ejecutes comandos, escribas artefactos ni consultes servicios
@@ -29,12 +31,34 @@ no predecir compras antes de que ocurran.
 
 Entrená enero–abril y compará en mayo. Minimizá log loss; Average Precision es
 complementaria. Sólo se conserva una mejora estricta. Empates, errores y timeouts
-se descartan. No repitas hipótesis que ya se probaron.
+se descartan. Usá el historial de experimentos recibido en el contexto para elegir
+la próxima hipótesis y explicar brevemente por qué vale la pena probarla. Evitá
+repetir experimentos equivalentes; podés reevaluar una feature con otra familia
+de modelos si justificás la interacción que querés comprobar.
 
 La baseline inicial usa sólo la sesión actual. Después de medir las baselines,
-investigá explícitamente si agregar el historial mejora la validación. Vos elegís
+investigá explícitamente si agregar el historial mejora la validación, pero no
+dediques toda la búsqueda a features. Vos elegís
 las agregaciones en `features.py`: contadores, tasas, promedios, recencias,
 tendencias o ventanas de 7/30 días. Compará su contribución contra la baseline.
+
+Explorá tanto features como modelos. En los primeros ensayos, compará al menos
+una familia de modelos alternativa a la actual, manteniendo las features fijas,
+si el presupuesto de ensayos lo permite. No esperes a agotar las ideas de features
+para modificar `modeling.py`.
+
+Podés intercalar ensayos de features, de modelo y de hiperparámetros según los
+resultados. No hay una fase obligatoria de features seguida de una fase de modelos,
+ni hace falta alternar mecánicamente en cada ensayo. Si llevás varios ensayos
+consecutivos en una sola dirección, considerá explícitamente explorar la otra.
+Pequeñas mejoras en features no justifican postergar indefinidamente la comparación
+de modelos.
+
+Para atribuir el resultado, preferí cambiar una dimensión por ensayo: conservá
+las features al comparar modelos y el modelo al comparar features. Podés modificar
+ambos archivos cuando una única hipótesis lo requiera, explicando el motivo.
+El aporte de una feature depende del estimador: que no mejore un modelo no implica
+que sea inútil para otra familia. Partí siempre del mejor estado confirmado.
 
 `frame['history']` contiene una lista de registros por fila. El cargador fijo
 normaliza los arrays provenientes de Parquet a listas Python; sin sesiones
