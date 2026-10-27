@@ -2,6 +2,7 @@
 import argparse
 import ast
 import csv
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 import hashlib
@@ -63,6 +64,10 @@ class RequestLimiter:
                 time.sleep(min(remaining, 60))
                 remaining = self.last_request + self.interval - time.monotonic()
         self.last_request = time.monotonic()
+
+
+class DailyQuotaExceeded(RuntimeError):
+    """The provider explicitly reported an exhausted daily quota."""
 
 
 def propose(context, model=None, provider='groq', limiter=None):
@@ -128,6 +133,9 @@ def propose(context, model=None, provider='groq', limiter=None):
             except (ValueError, KeyError, TypeError, AttributeError):
                 message, code = body or 'No error detail returned', None
             error.msg = f'{error.reason}: {str(message).replace(key, "[REDACTED]")}'
+            daily = any(marker in body.lower() for marker in ('perday', 'per_day', 'per day', 'daily'))
+            if error.code == 429 and daily:
+                raise DailyQuotaExceeded(str(error)) from error
             retryable = error.code in (408, 409, 429, 498) or 500 <= error.code <= 599
             retryable |= error.code == 400 and (code == 'json_validate_failed'
                                                 or 'failed to generate json' in str(message).lower())
@@ -214,50 +222,169 @@ def train(worktree, config, directory, timeout):
     return values
 
 
-def run(root, output, proposer, experiments=10, timeout=180):
-    """Keep accepted commits on an isolated branch; leave the user's checkout alone."""
+def write_json(path, value):
+    """Replace a checkpoint only after its complete contents reach disk."""
+    path = Path(path)
+    temporary = path.with_name(path.name + '.tmp')
+    with temporary.open('w', encoding='utf-8') as file:
+        json.dump(value, file, indent=2, allow_nan=False)
+        file.flush()
+        os.fsync(file.fileno())
+    temporary.replace(path)
+
+
+def save_history(output, history):
+    path = output / 'history.jsonl'
+    temporary = path.with_suffix('.jsonl.tmp')
+    with temporary.open('w', encoding='utf-8') as file:
+        for entry in history:
+            file.write(json.dumps(entry, allow_nan=False) + '\n')
+        file.flush()
+        os.fsync(file.fileno())
+    temporary.replace(path)
+
+
+@contextmanager
+def research_lock(output):
+    """An OS lock is released even when the process is killed."""
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with (output.parent / ('.' + output.name + '.lock')).open('a+b') as file:
+        file.seek(0)
+        if os.name == 'nt':
+            import msvcrt
+            if file.read(1) == b'':
+                file.write(b'0')
+                file.flush()
+            file.seek(0)
+            lock = lambda: msvcrt.locking(file.fileno(), msvcrt.LK_NBLCK, 1)
+            unlock = lambda: (file.seek(0), msvcrt.locking(file.fileno(), msvcrt.LK_UNLCK, 1))
+        else:
+            import fcntl
+            lock = lambda: fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            unlock = lambda: fcntl.flock(file, fcntl.LOCK_UN)
+        try:
+            lock()
+        except OSError as error:
+            raise ValueError('This research is already running') from error
+        try:
+            yield
+        finally:
+            unlock()
+
+
+def run(root, output, proposer, experiments=10, timeout=180, *, resume=False,
+        provider=None, model=None, rpm=None):
+    """Continue an isolated research branch without changing the user's checkout."""
     root, output = Path(root).resolve(), Path(output).resolve()
     if git(root, 'status', '--porcelain'):
         raise ValueError('Commit or stash pending changes before starting the loop')
-    config = json.loads((root / 'configs/baselines.json').read_text(encoding='utf-8'))
-    source_data = root / config['data_dir']
-    inputs = [source_data / f'{split}_{suffix}.parquet'
-              for split in ('train', 'validation') for suffix in ('X', 'y', 'metadata')]
-    inputs.append(source_data / 'manifest.json')
-    missing = [str(path) for path in inputs if not path.is_file()]
-    if missing:
-        raise FileNotFoundError('Run preprocessing first; missing inputs: ' + ', '.join(missing))
-    manifest = json.loads((source_data / 'manifest.json').read_text(encoding='utf-8'))
-    instructions = (root / 'program.md').read_text(encoding='utf-8')
-    output.mkdir(parents=True, exist_ok=False)
-    branch = 'autoresearch/' + output.name
-    worktree = output / 'worktree'
-    git(root, 'worktree', 'add', '-b', branch, str(worktree), 'HEAD')
-    data = output / 'data'
-    data.mkdir()
-    # Freeze only train and validation. Do not copy test or regenerate features.
-    for path in inputs:
-        shutil.copyfile(path, data / path.name)
-    config['data_dir'] = str(data)
-    ignored = ('data/',)
-    fixed = [worktree / name for name in git(worktree, 'ls-files').splitlines()
-             if name not in EDITABLE and not name.startswith(ignored)]
-    fixed += list(data.iterdir())
-    hashes = fingerprints(fixed)
-    best_commit = git(worktree, 'rev-parse', 'HEAD')
-    protocol = {'branch': branch, 'initial_commit': best_commit, 'editable': EDITABLE,
-                'primary_metric': 'validation log_loss', 'direction': 'minimize',
-                'experiments': experiments, 'timeout': timeout, 'config': config,
-                'python': sys.version, 'fixed_sha256': hashes}
-    (output / 'protocol.json').write_text(json.dumps(protocol, indent=2), encoding='utf-8')
-    history, best_score, best_run = [], None, None
-    for number in range(experiments + 1):
+    with research_lock(output):
+        return run_locked(root, output, proposer, experiments, timeout, resume, provider, model, rpm)
+
+
+def run_locked(root, output, proposer, experiments, timeout, resume, provider, model, rpm):
+    if resume:
+        protocol = json.loads((output / 'protocol.json').read_text(encoding='utf-8'))
+        worktree = output / 'worktree'
+        data = output / 'data'
+        branch = protocol['branch']
+        config = protocol['config']
+        hashes = protocol['fixed_sha256']
+        fixed = [Path(name) for name in hashes]
+        if not hashes or any(value is None for value in hashes.values()) or fingerprints(fixed) != hashes:
+            raise ValueError('Protected files or frozen data changed; cannot resume')
+        if git(worktree, 'branch', '--show-current') != branch:
+            raise ValueError('Research worktree is on a different branch')
+        # The frozen checkout defines the protocol; reject changed local instructions/config/code.
+        for path in fixed:
+            if path.is_relative_to(worktree):
+                relative = path.relative_to(worktree)
+                if fingerprints([root / relative])[str(root / relative)] != hashes[str(path)]:
+                    raise ValueError(f'Protocol differs from the current checkout: {relative}')
+        history_path = output / 'history.jsonl'
+        history = [json.loads(line) for line in history_path.read_text(encoding='utf-8').splitlines()] if history_path.exists() else []
+        confirmed = [entry for entry in history if entry['status'] in ('baseline', 'keep')]
+        if not confirmed:
+            raise ValueError('No confirmed baseline to resume; start a new research run')
+        best = confirmed[-1]
+        best_commit = best['commit']
+        best_score = best['metrics']['candidate']['log_loss']
+        best_run = str(output / f"run_{best['experiment']:03d}")
+        git(worktree, 'cat-file', '-e', best_commit + '^{commit}')
+        changed = set(git(worktree, 'diff', 'HEAD', '--name-only').splitlines())
+        untracked = git(worktree, 'ls-files', '--others', '--exclude-standard')
+        if changed - set(EDITABLE) or untracked:
+            raise ValueError('Unexpected changes in research worktree; inspect before resuming')
+        pending = output / 'pending.json'
+        if pending.exists():
+            entry = json.loads(pending.read_text(encoding='utf-8'))
+            if not any(item['experiment'] == entry['experiment'] for item in history):
+                entry.update(status='interrupted', error='Execution interrupted before confirming this attempt',
+                             timestamp=datetime.now(timezone.utc).isoformat())
+                history.append(entry)
+                save_history(output, history)
+            pending.unlink()
+        for path in (output / 'executions').glob('*.json'):
+            previous = json.loads(path.read_text(encoding='utf-8'))
+            if previous['status'] == 'running':
+                previous['status'] = 'interrupted'
+                write_json(path, previous)
+        git(worktree, 'reset', '--hard', best_commit)
+        manifest = json.loads((data / 'manifest.json').read_text(encoding='utf-8'))
+        first = max(entry['experiment'] for entry in history) + 1
+    else:
+        config = json.loads((root / 'configs/baselines.json').read_text(encoding='utf-8'))
+        source_data = root / config['data_dir']
+        inputs = [source_data / f'{split}_{suffix}.parquet'
+                  for split in ('train', 'validation') for suffix in ('X', 'y', 'metadata')]
+        inputs.append(source_data / 'manifest.json')
+        missing = [str(path) for path in inputs if not path.is_file()]
+        if missing:
+            raise FileNotFoundError('Run preprocessing first; missing inputs: ' + ', '.join(missing))
+        manifest = json.loads((source_data / 'manifest.json').read_text(encoding='utf-8'))
+        output.mkdir(parents=True, exist_ok=False)
+        branch = 'autoresearch/' + output.name
+        worktree = output / 'worktree'
+        git(root, 'worktree', 'add', '-b', branch, str(worktree), 'HEAD')
+        data = output / 'data'
+        data.mkdir()
+        # Freeze only train and validation. Do not copy test or regenerate features.
+        for path in inputs:
+            shutil.copyfile(path, data / path.name)
+        config['data_dir'] = str(data)
+        ignored = ('data/',)
+        fixed = [worktree / name for name in git(worktree, 'ls-files').splitlines()
+                 if name not in EDITABLE and not name.startswith(ignored)]
+        fixed += list(data.iterdir())
+        hashes = fingerprints(fixed)
+        best_commit = git(worktree, 'rev-parse', 'HEAD')
+        protocol = {'branch': branch, 'initial_commit': best_commit, 'editable': EDITABLE,
+                    'primary_metric': 'validation log_loss', 'direction': 'minimize',
+                    'experiments': experiments, 'timeout': timeout, 'config': config,
+                    'python': sys.version, 'fixed_sha256': hashes}
+        write_json(output / 'protocol.json', protocol)
+        history, best_score, best_run = [], None, None
+        first = 0
+    instructions = (worktree / 'program.md').read_text(encoding='utf-8')
+    execution = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
+    execution_path = output / 'executions' / (execution + '.json')
+    execution_path.parent.mkdir(exist_ok=True)
+    details = {'execution': execution, 'resume': resume, 'provider': provider, 'model': model,
+               'experiments': experiments, 'timeout': timeout, 'rpm': rpm, 'status': 'running'}
+    write_json(execution_path, details)
+    summary = {'branch': branch, 'worktree': str(worktree), 'best_commit': best_commit,
+               'best_log_loss': best_score, 'best_run': best_run, 'attempts': max(0, first - 1)}
+    write_json(output / 'summary.json', summary)
+    stop = False
+    for number in range(first, first + experiments + (0 if resume else 1)):
         started = time.monotonic()
         parent = best_commit
         entry = {'experiment': number,
                  'hypothesis': 'Constant and logistic baselines' if not number else 'Proposal unavailable',
-                 'parent_commit': parent, 'commit': None, 'status': 'failed', 'metrics': None}
+                 'parent_commit': parent, 'commit': None, 'status': 'failed', 'metrics': None,
+                 'execution': execution, 'provider': provider, 'model': model}
         stop = False
+        write_json(output / 'pending.json', entry)
         try:
             if number:
                 context = {'instructions': instructions, 'best_score': best_score,
@@ -271,10 +398,12 @@ def run(root, output, proposer, experiments=10, timeout=180):
                 if isinstance(proposal, dict) and isinstance(proposal.get('hypothesis'), str):
                     entry['hypothesis'] = proposal['hypothesis']
                 (output / f'proposal_{number:03d}.json').write_text(json.dumps(proposal, indent=2), encoding='utf-8')
+                write_json(output / 'pending.json', entry)
                 apply_proposal(worktree, proposal)
                 git(worktree, 'add', '--', *EDITABLE)
                 git(worktree, 'commit', '-m', 'research: ' + proposal['hypothesis'].splitlines()[0][:120])
             entry['commit'] = git(worktree, 'rev-parse', 'HEAD')
+            write_json(output / 'pending.json', entry)
             values = train(worktree, config, output / f'run_{number:03d}', timeout)
             if fingerprints(fixed) != hashes:
                 raise RuntimeError('A protected file or frozen dataset changed; stopping')
@@ -289,10 +418,14 @@ def run(root, output, proposer, experiments=10, timeout=180):
                 entry['status'] = 'baseline' if not number else 'keep'
             else:
                 entry['status'] = 'discard'
-        except Exception as error:
+        except (Exception, KeyboardInterrupt) as error:
             entry['error'] = str(error)
             entry['status'] = 'timeout' if isinstance(error, subprocess.TimeoutExpired) else 'failed'
-            stop = best_score is None
+            if isinstance(error, KeyboardInterrupt):
+                entry['status'] = 'interrupted'
+            elif isinstance(error, DailyQuotaExceeded):
+                entry['status'] = 'quota_exhausted'
+            stop = best_score is None or isinstance(error, (DailyQuotaExceeded, KeyboardInterrupt))
         finally:
             if fingerprints(fixed) != hashes or git(worktree, 'status', '--porcelain', '--untracked-files=all'):
                 # Allowed uncommitted proposal edits are recoverable; other writes stop the loop.
@@ -311,21 +444,25 @@ def run(root, output, proposer, experiments=10, timeout=180):
             entry['duration_seconds'] = time.monotonic() - started
             entry['timestamp'] = datetime.now(timezone.utc).isoformat()
             history.append(entry)
-            with (output / 'history.jsonl').open('a', encoding='utf-8') as file:
-                file.write(json.dumps(entry, allow_nan=False) + '\n')
+            save_history(output, history)
             summary = {'branch': branch, 'worktree': str(worktree), 'best_commit': best_commit,
                        'best_log_loss': best_score, 'best_run': best_run, 'attempts': number}
-            (output / 'summary.json').write_text(json.dumps(summary, indent=2), encoding='utf-8')
+            write_json(output / 'summary.json', summary)
+            (output / 'pending.json').unlink(missing_ok=True)
             print(f'{number}: {entry["status"]} | best log loss: {best_score}', flush=True)
             if entry.get('error'):
                 print(f'  Error: {entry["error"]}', flush=True)
         if stop:
             break
+    details['status'] = history[-1]['status'] if stop else 'completed'
+    details['finished_at'] = datetime.now(timezone.utc).isoformat()
+    write_json(execution_path, details)
     return summary
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--resume', help='Existing run ID to continue on this machine')
     parser.add_argument('--experiments', type=int, default=10)
     parser.add_argument('--timeout', type=int, default=180)
     parser.add_argument('--provider', choices=DEFAULT_MODELS, default='groq')
@@ -351,7 +488,12 @@ def main():
         options = {'limiter': limiter} if limiter is not None else {}
         proposer = lambda context: propose(context, args.model, args.provider, **options)
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
-    summary = run(ROOT, ROOT / 'experiments/autoresearch' / stamp, proposer, args.experiments, args.timeout)
+    if args.resume and (Path(args.resume).name != args.resume or args.resume in ('.', '..')):
+        parser.error('--resume must be a run ID, not a path')
+    output = ROOT / 'experiments/autoresearch' / (args.resume or stamp)
+    summary = run(ROOT, output, proposer, args.experiments, args.timeout,
+                  resume=bool(args.resume), provider='saved' if args.proposals else args.provider,
+                  model=None if args.proposals else args.model or DEFAULT_MODELS[args.provider], rpm=args.rpm)
     print(json.dumps(summary, indent=2))
     if summary['best_log_loss'] is None:
         raise SystemExit(1)
