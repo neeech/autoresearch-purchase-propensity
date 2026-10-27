@@ -6,7 +6,7 @@
     "test_start": "2017-06-01",
     "missing_transactions_mean_zero": true
   },
-  "raw_sha256": "e9e11a97cdabed26e02789316cf9c9076c5ea1bf085c7ee4ff76c355a5e5b882",
+  "raw_sha256": "55793302dd998c9c2da014df95c83d1e938e16f903590c932a229ad591b024c5",
   "features": [
     "visitNumber",
     "bounces",

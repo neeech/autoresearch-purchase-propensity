@@ -59,6 +59,35 @@ uv run autoresearch --experiments 2 --proposals propuestas.json
 
 El JSON contiene una lista de propuestas según [program.md](program.md).
 
+## Continuar una investigación
+
+Para agregar 10 intentos a una investigación existente en la misma máquina:
+
+```bash
+uv run autoresearch --resume <run_id> --experiments 10 --provider gemini --rpm 10 --timeout 600
+```
+
+`<run_id>` es el nombre de la carpeta en `experiments/autoresearch/`. Se reutilizan
+los datos congelados, el mejor commit y su score, sin repetir las baselines.
+El LLM recibe el historial acumulado y los nuevos ensayos continúan la numeración
+sin sobrescribir resultados. Cada candidato se entrena desde cero.
+
+Podés cambiar de proveedor o modelo con `--provider` y `--model`; cada ejecución
+y ensayo registra cuál se usó. Las opciones de proveedor, modelo, RPM y timeout
+se indican para cada ejecución; no se heredan de la anterior. También se puede
+continuar con `--proposals` sin llamadas a una API.
+
+Conservá la carpeta completa, incluido el worktree. La reanudación verifica los
+hashes de los datos congelados y archivos protegidos, y que el checkout actual
+mantenga el protocolo original. No permite dos ejecuciones simultáneas de la
+misma investigación.
+
+Los resultados se guardan después de cada ensayo. Si un intento quedó incompleto,
+se registra como interrumpido y se continúa con un número nuevo desde el mejor
+confirmado. `Ctrl+C` guarda el estado y detiene el loop. Si el proveedor identifica
+explícitamente una cuota diaria agotada en una respuesta 429, también se detiene;
+otros límites y fallos transitorios conservan los reintentos habituales.
+
 ## Contrato
 
 | Archivo | Responsabilidad | Editable por el LLM |
@@ -102,6 +131,8 @@ El loop crea una rama `autoresearch/<run_id>` y un worktree separado en
 - `protocol.json`: configuración y hashes de los archivos fijos.
 - `proposal_NNN.json` y `run_NNN/`: propuestas, logs y artefactos.
 - `data/` y `worktree/`: datos congelados y código de investigación.
+- `executions/`: configuración y estado de cada ejecución, incluidas reanudaciones.
+- `pending.json`: intento en curso, usado para recuperar interrupciones.
 
 El checkout original no cambia. Las propuestas descartadas quedan guardadas,
 aunque Git puede eliminar sus commits sin referencias al hacer garbage collection.

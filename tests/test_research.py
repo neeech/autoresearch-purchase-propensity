@@ -91,6 +91,118 @@ with (out / 'results.csv').open('w', newline='') as file:
         self.assertNotIn('test', contexts[0]['data']['splits'])
         self.assertEqual(git(self.root, 'show', history[2]['commit'] + ':' + EDITABLE[1]).splitlines()[-1], '    return 0.6')
 
+    def entries(self):
+        return [json.loads(line) for line in (self.output / 'history.jsonl').read_text().splitlines()]
+
+    def test_resume_keeps_best_history_and_adds_attempts_with_new_provider(self):
+        first = run(self.root, self.output, lambda context: self.proposal(.4), experiments=1,
+                    provider='gemini', model='first-model')
+        baseline = (self.output / 'run_000/training.log').stat().st_mtime_ns
+        contexts = []
+        proposals = iter([self.proposal(.6), self.proposal(.3)])
+        def proposer(context):
+            contexts.append({**context, 'history': list(context['history'])})
+            return next(proposals)
+        summary = run(self.root, self.output, proposer, experiments=2, resume=True,
+                      provider='groq', model='second-model')
+        entries = self.entries()
+        self.assertEqual([e['experiment'] for e in entries], [0, 1, 2, 3])
+        self.assertEqual([e['status'] for e in entries], ['baseline', 'keep', 'discard', 'keep'])
+        self.assertEqual(contexts[0]['best_score'], .4)
+        self.assertEqual(len(contexts[0]['history']), 2)
+        self.assertIn('return 0.4', contexts[0]['files'][EDITABLE[1]])
+        self.assertEqual(entries[2]['parent_commit'], first['best_commit'])
+        self.assertEqual(entries[3]['parent_commit'], first['best_commit'])
+        self.assertEqual(entries[1]['provider'], 'gemini')
+        self.assertEqual(entries[3]['provider'], 'groq')
+        self.assertEqual(summary['best_log_loss'], .3)
+        self.assertEqual(baseline, (self.output / 'run_000/training.log').stat().st_mtime_ns)
+        self.assertEqual(len(list((self.output / 'executions').glob('*.json'))), 2)
+        self.assertEqual(git(self.root, 'status', '--porcelain'), '')
+
+    def test_resume_recovers_history_when_summary_write_was_interrupted(self):
+        from autoresearch_purchase_propensity.research import write_json
+        def write(path, value):
+            if path.name == 'summary.json' and value['best_log_loss'] == .4:
+                raise OSError('Simulated checkpoint interruption')
+            write_json(path, value)
+        with patch('autoresearch_purchase_propensity.research.write_json', side_effect=write):
+            with self.assertRaisesRegex(OSError, 'checkpoint interruption'):
+                run(self.root, self.output, lambda context: self.proposal(.4), experiments=1)
+        summary = run(self.root, self.output, lambda context: self.proposal(.3),
+                      experiments=1, resume=True)
+        self.assertEqual([e['status'] for e in self.entries()], ['baseline', 'keep', 'keep'])
+        self.assertEqual(summary['best_log_loss'], .3)
+
+    def test_resume_records_pending_attempt_and_preserves_its_artifacts(self):
+        from autoresearch_purchase_propensity.research import write_json
+        summary = run(self.root, self.output, lambda context: None, experiments=0)
+        worktree = Path(summary['worktree'])
+        apply_proposal(worktree, self.proposal(.2))
+        git(worktree, 'add', *EDITABLE)
+        git(worktree, 'commit', '-m', 'Unconfirmed candidate')
+        write_json(self.output / 'pending.json', {'experiment': 1, 'hypothesis': 'Unconfirmed',
+                   'parent_commit': summary['best_commit'], 'commit': git(worktree, 'rev-parse', 'HEAD'),
+                   'metrics': None, 'status': 'running'})
+        (self.output / 'run_001').mkdir()
+        artifact = self.output / 'run_001/training.log'
+        artifact.write_text('Partial training')
+        result = run(self.root, self.output, lambda context: self.proposal(.4), experiments=1, resume=True)
+        self.assertEqual([e['status'] for e in self.entries()], ['baseline', 'interrupted', 'keep'])
+        self.assertEqual(result['attempts'], 2)
+        self.assertEqual(artifact.read_text(), 'Partial training')
+        self.assertEqual(self.entries()[2]['parent_commit'], self.initial)
+
+    def test_resume_rejects_changed_frozen_data_and_protocol(self):
+        run(self.root, self.output, lambda context: None, experiments=0)
+        path = self.output / 'data/train_X.parquet'
+        previous = path.read_bytes()
+        path.write_bytes(b'changed')
+        with self.assertRaisesRegex(ValueError, 'frozen data changed'):
+            run(self.root, self.output, lambda context: None, resume=True)
+        path.write_bytes(previous)
+        (self.root / 'program.md').write_text('Different instructions')
+        git(self.root, 'add', 'program.md')
+        git(self.root, 'commit', '-m', 'Change protocol')
+        with self.assertRaisesRegex(ValueError, 'Protocol differs'):
+            run(self.root, self.output, lambda context: None, resume=True)
+        self.assertEqual(len(self.entries()), 1)
+
+    def test_research_cannot_run_twice_at_the_same_time(self):
+        from autoresearch_purchase_propensity.research import research_lock
+        with research_lock(self.output):
+            with self.assertRaisesRegex(ValueError, 'already running'):
+                run(self.root, self.output, lambda context: None, experiments=0)
+        self.assertFalse(self.output.exists())
+        run(self.root, self.output, lambda context: None, experiments=0)
+
+    def test_interrupt_stops_and_can_be_resumed(self):
+        def interrupt(context):
+            raise KeyboardInterrupt()
+        result = run(self.root, self.output, interrupt, experiments=3)
+        self.assertEqual(result['attempts'], 1)
+        self.assertEqual(self.entries()[1]['status'], 'interrupted')
+        summary = run(self.root, self.output, lambda context: self.proposal(.4), experiments=1, resume=True)
+        self.assertEqual(summary['attempts'], 2)
+        self.assertEqual(summary['best_log_loss'], .4)
+
+    def test_daily_quota_stops_without_spending_remaining_attempts(self):
+        from io import BytesIO
+        from urllib.error import HTTPError
+        error = HTTPError('https://api.groq.com', 429, 'Too Many Requests', {},
+                          BytesIO(b'{"error":{"message":"Rate limit reached for requests per day (RPD)"}}'))
+        with patch.dict(os.environ, {'GROQ_API_KEY': 'test-key'}), \
+                patch('autoresearch_purchase_propensity.research.urlopen', side_effect=error) as request, \
+                patch('autoresearch_purchase_propensity.research.time.sleep') as sleep:
+            summary = run(self.root, self.output, lambda context: propose(context), experiments=5)
+        self.assertEqual(summary['attempts'], 1)
+        self.assertEqual(self.entries()[1]['status'], 'quota_exhausted')
+        request.assert_called_once()
+        # subprocess.wait also uses time.sleep for polling; no API backoff occurred.
+        self.assertTrue(all(call.args[0] < 2 for call in sleep.call_args_list))
+        result = run(self.root, self.output, lambda context: self.proposal(.4), experiments=1, resume=True)
+        self.assertEqual(result['best_log_loss'], .4)
+
     def test_reject_paths_syntax_missing_interface_and_empty_changes(self):
         for proposal in [
             {'hypothesis': 'escape', 'files': {'../escape.py': 'x=1'}},
@@ -288,7 +400,7 @@ class RateLimitTests(unittest.TestCase):
             self.assertEqual(starts, expected)
 
     def test_cli_shares_limiter_and_rejects_invalid_rpm_before_run(self):
-        def fake_run(root, output, proposer, experiments, timeout):
+        def fake_run(root, output, proposer, experiments, timeout, **kwargs):
             proposer({'instructions': 'First'})
             proposer({'instructions': 'Second'})
             return {'best_log_loss': .5}
@@ -374,7 +486,7 @@ class ProviderTests(unittest.TestCase):
             ([], {'GROQ_API_KEY': 'test-key'}, (None, 'groq')),
             (['--provider', 'gemini', '--experiments', '0'], {}, None),
         ]:
-            def fake_run(root, output, proposer, experiments, timeout):
+            def fake_run(root, output, proposer, experiments, timeout, **kwargs):
                 if experiments:
                     proposer({'instructions': 'Test'})
                 return {'best_log_loss': .5}
