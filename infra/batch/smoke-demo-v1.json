@@ -1,0 +1,31 @@
+{
+  "TransformJobName": "purchase-propensity-smoke-v1",
+  "ModelName": "purchase-propensity-demo-v1",
+  "MaxConcurrentTransforms": 1,
+  "MaxPayloadInMB": 6,
+  "BatchStrategy": "MultiRecord",
+  "ModelClientConfig": {
+    "InvocationsTimeoutInSeconds": 60,
+    "InvocationsMaxRetries": 0
+  },
+  "TransformInput": {
+    "DataSource": {
+      "S3DataSource": {
+        "S3DataType": "S3Prefix",
+        "S3Uri": "s3://purchase-propensity-demo-7f4c2a/batches/demo-v1/smoke.jsonl"
+      }
+    },
+    "ContentType": "application/jsonlines",
+    "CompressionType": "None",
+    "SplitType": "Line"
+  },
+  "TransformOutput": {
+    "S3OutputPath": "s3://purchase-propensity-demo-7f4c2a/predictions/demo-v1/smoke-v1/",
+    "Accept": "application/jsonlines",
+    "AssembleWith": "Line"
+  },
+  "TransformResources": {
+    "InstanceType": "ml.m5.large",
+    "InstanceCount": 1
+  }
+}
