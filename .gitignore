@@ -6,3 +6,14 @@ __pycache__/
 *.pyc
 data/processed/
 experiments/training/
+experiments/deployment/
+
+# Material local de aprendizaje (skill teach)
+/MISSION.md
+/RESOURCES.md
+/NOTES.md
+/lessons/
+/reference/
+/learning-records/
+/assets/learning.css
+/assets/quiz.js

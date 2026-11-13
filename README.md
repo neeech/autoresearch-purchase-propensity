@@ -141,3 +141,26 @@ Para incorporar mejoras, revisar y hacer cherry-pick de los commits aceptados.
 Los datos procesados y los artefactos se generan localmente y se ignoran en Git.
 El CSV original se conserva en `data/raw/`. Una ejecución independiente de
 `train.py` guarda sus resultados en `experiments/training/`.
+
+## Empaquetar un candidato para una demostración
+
+```bash
+uv run python scripts/package_model.py <directorio-del-artefacto> experiments/deployment/demo-v1/model.tar.gz
+```
+
+El directorio de entrada contiene `model.joblib`, `code/`, configuración, manifiesto
+y métricas de entrenamiento. El paquete conserva el código de features y del
+modelo, hashes y versiones del entorno de empaquetado. No incluye datasets ni
+credenciales, no reentrena y no sube archivos automáticamente. La salida no se
+sobrescribe y permanece excluida de Git.
+
+Es un artefacto intermedio: todavía necesita el servidor de inferencia y la imagen
+Docker para Batch Transform. Empaquetar no equivale a aprobar el modelo ni acredita
+que sus dependencias coincidan con las originales del entrenamiento.
+
+## Imagen de inferencia
+
+El servidor y el Dockerfile están en [inference/](inference/README.md).
+La imagen `purchase-propensity-inference:demo-v1` se probó localmente con el paquete
+demo-v1. Recibe sesiones procesadas con historia en JSON Lines y devuelve
+probabilidades; la generación de lotes y la historia temporal ocurren antes.
