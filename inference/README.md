@@ -9,7 +9,9 @@ https://docs.aws.amazon.com/sagemaker/latest/dg/your-algorithms-batch-code.html
 Desde la raíz del repositorio:
 
 ```bash
-docker build -t purchase-propensity-inference:demo-v1 inference
+docker buildx build --platform linux/amd64 --provenance=false --sbom=false \
+  --output type=docker,oci-mediatypes=false \
+  -t purchase-propensity-inference:demo-v1 inference
 mkdir -p experiments/deployment/demo-v1/model
 tar -xzf experiments/deployment/demo-v1/model.tar.gz -C experiments/deployment/demo-v1/model
 docker run --rm --name purchase-propensity-local -p 127.0.0.1:8080:8080 \
@@ -63,3 +65,7 @@ paquetes propios y confiables: joblib carga objetos Python ejecutables.
 La muestra está en `experiments/deployment/demo-v1/sample.jsonl`. No se utilizó junio.
 El candidato conserva sus limitaciones conocidas: early stopping y warning de
 una división histórica. No constituye un modelo final aprobado.
+
+La exportación usa un manifiesto Docker de una sola plataforma, sin el índice OCI
+que BuildKit agrega al incluir attestations. Esto evita incompatibilidades de
+formato de imagen al crear el modelo en SageMaker. No cambia el paquete del modelo.
