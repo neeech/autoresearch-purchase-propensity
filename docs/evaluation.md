@@ -68,7 +68,7 @@ Fuentes: [Tracking](https://mlflow.org/docs/latest/ml/tracking/quickstart/) y
 Para artefactos confiables que aún no exportaban CSV, ejecutar en un proceso nuevo:
 
 ```bash
-uv run python scripts/export_validation.py RUTA_AL_ARTEFACTO \
+uv run python scripts/export_predictions.py RUTA_AL_ARTEFACTO \
   --output experiments/evaluation/MI_VERSION/predictions
 ```
 
