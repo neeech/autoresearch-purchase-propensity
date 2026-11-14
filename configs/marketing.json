@@ -1,0 +1,5 @@
+{
+  "budget": {"tp": 1, "tn": 0, "fp": 10, "fn": 5},
+  "balanced": {"tp": 1, "tn": 0, "fp": 5, "fn": 5},
+  "opportunities": {"tp": 1, "tn": 0, "fp": 5, "fn": 10}
+}

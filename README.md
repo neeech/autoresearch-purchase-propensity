@@ -164,3 +164,11 @@ El servidor y el Dockerfile están en [inference/](inference/README.md).
 La imagen `purchase-propensity-inference:demo-v1` se probó localmente con el paquete
 demo-v1. Recibe sesiones procesadas con historia en JSON Lines y devuelve
 probabilidades; la generación de lotes y la historia temporal ocurren antes.
+
+## Evaluación de marketing y MLflow
+
+La selección de modelos conserva log loss. La evaluación posterior permite elegir
+umbrales por penalizaciones simuladas y compararlos con estrategias constantes.
+Ver [protocolo y comandos](docs/evaluation.md) y [diseño del sistema](docs/architecture.md).
+MLflow es opcional (`uv sync --extra tracking`) y registra evaluaciones localmente;
+no cambia el despliegue AWS ni aprueba automáticamente modelos.

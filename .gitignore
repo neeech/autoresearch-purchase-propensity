@@ -17,3 +17,9 @@ experiments/deployment/
 /learning-records/
 /assets/learning.css
 /assets/quiz.js
+
+# Evaluaciones y tracking locales
+experiments/evaluation/
+/mlflow.db*
+/mlruns/
+/mlartifacts/
