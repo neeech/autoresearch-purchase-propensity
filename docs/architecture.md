@@ -1,4 +1,4 @@
-# Arquitectura del pipeline (referencia del proyecto cerrado)
+# Arquitectura del pipeline
 
 El sistema recibe sesiones web terminadas, construye sus features y produce una
 probabilidad de compra por sesión. Entrenamiento y aprobación son manuales; el
@@ -74,7 +74,7 @@ IAM limita accesos a S3, ECR y logs. El job usa recursos temporales; un budget n
 es un límite automático de ejecución. Para el primer ensayo se prevé seguimiento
 manual y solicitud de parada si supera 15 minutos, confirmando su finalización.
 
-## Trabajo que quedó sin implementar al cierre
+## Trabajo necesario para operar con lotes nuevos
 
 1. Validar y procesar un lote nuevo sin etiquetas con el mismo esquema e historia.
 2. Guardar probabilidades y un reporte de volumen, faltantes, distribución de scores,
@@ -86,5 +86,3 @@ manual y solicitud de parada si supera 15 minutos, confirmando su finalización.
 El candidato actual sigue pendiente de aprobación. Las sesiones nuevas permiten
 probar operación; sólo datos etiquetados independientes permiten medir desempeño
 predictivo. Simulaciones y penalizaciones de marketing no prueban impacto comercial.
-
-El proyecto no continuará con estos pasos. Ver [cierre y alcance](project-closure.md).

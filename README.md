@@ -1,15 +1,10 @@
-# Purchase Propensity con AutoResearch — proyecto cerrado
-
-**Cerrado el 14/11/2026.** La formulación clasifica compras de sesiones ya
-terminadas; no permite justificar su uso para anticipar compras y activar campañas.
-El código y los resultados se conservan como referencia técnica, no como solución
-lista para producción. Ver [motivo del cierre y recursos AWS](docs/project-closure.md).
+# Purchase Propensity con AutoResearch
 
 Pipeline de Machine Learning para clasificar sesiones web según su probabilidad
 de compra. Incluye preparación temporal de datos, comparación de modelos,
 seguimiento con MLflow y un contenedor de inferencia preparado para AWS.
 
-**Objetivo operativo original, no completado:** procesar lotes de sesiones nuevas una vez terminadas,
+**Objetivo operativo:** procesar lotes de sesiones nuevas una vez terminadas,
 guardar sus probabilidades y generar un reporte trazable por ejecución. La
 inferencia fue verificada localmente; la ejecución batch en AWS sigue pendiente.
 
