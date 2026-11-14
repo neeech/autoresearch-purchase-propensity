@@ -64,7 +64,7 @@ revisar el error si se detiene. Una clave nueva puede compartir cuota con otras.
 |---|---|---|---|
 | Optuna marketing-baseline-v1 | Espacio LightGBM definido | 0,03407013 | Referencia independiente |
 | AutoResearch 20261114T172825124860Z | Ganador de Optuna | 0,03321754 | Antecedente incremental; no comparación independiente |
-| Nuevo AutoResearch | lightgbm_initial.json | Pendiente | Comparación independiente |
+| AutoResearch 20261114T175721832207Z | lightgbm_initial.json | 0,03293154 | Comparación independiente, 10 propuestas |
 
 La corrida anterior no se altera. Ver [resultados incrementales](autoresearch-optuna-results.md).
 El mejor código permanece en su workspace, no se copia al baseline inicial.
@@ -84,3 +84,9 @@ sobre sesiones terminadas, no una predicción de compras futuras por una campañ
 Después de revisión y aprobación: empaquetar una nueva versión, adaptar y probar
 la imagen de inferencia antes de subirla a ECR/S3. No sobrescribir demo-v1: su
 servidor asume el pipeline anterior. AWS y el Model Registry siguen pendientes.
+
+## Cierre de la comparación
+
+La corrida independiente completó 10 propuestas, no las 20 sugeridas en el
+ejemplo. Ver [resultados y estado MLOps](independent-results.md). El candidato
+queda identificado en configs/candidate.json, todavía sin aprobación/despliegue.

@@ -49,20 +49,21 @@ Sesiones → procesamiento e historia → baselines → AutoResearch
 5. **Trazabilidad y despliegue:** MLflow registra evaluaciones; Docker, S3, ECR y
    SageMaker permiten preparar la ejecución del modelo por lotes.
 
-## Resultados de la investigación anterior
+## Resultados
 
-Evaluación sobre **65.371 sesiones de mayo**, de las cuales 1.115 tuvieron compra:
+Comparación sobre **65.371 sesiones de mayo**, con 1.115 compras:
 
-| Modelo | Log loss ↓ | Penalización media ↓ |
+| Modelo | Log loss ↓ | Penalización simulada total ↓ |
 |---|---:|---:|
-| Probabilidad constante | 0,087228 | 0,170565 |
-| Regresión logística | 0,038736 | 0,133469 |
-| HistGradientBoosting seleccionado | **0,033616** | **0,123816** |
+| Tasa constante | 0,087228 | 11.150 |
+| LightGBM + Optuna | 0,034070 | 8.274 |
+| AutoResearch independiente | **0,032932** | **7.911** |
 
-En el escenario principal, el candidato reduce la penalización un **7,23 %**
-frente a la regresión logística. Los umbrales se seleccionaron en la misma
-validación: son resultados exploratorios, no una estimación de retorno económico
-real. Ver [evaluación y limitaciones](docs/marketing-results.md).
+AutoResearch mejora log loss un **3,34 %** frente a Optuna. Las búsquedas tuvieron
+presupuestos y libertades diferentes: 20 ensayos de hiperparámetros con Optuna y
+10 propuestas de features/modelos con AutoResearch. Los umbrales se eligieron en
+la misma validación; no son resultados de test independiente ni retorno económico
+real. Ver [comparación y limitaciones](docs/independent-results.md).
 
 ## Empezar
 
@@ -83,8 +84,9 @@ uv run autoresearch --experiments 10 --timeout 180 --rpm 10
 ```
 
 Cada investigación conserva hipótesis, cambios, métricas y errores en un workspace
-separado. El modelo inicial del código principal es logístico; el candidato
-seleccionado se conserva en los artefactos de su investigación.
+separado. Por defecto el código comienza con regresión logística; para repetir la
+comparación independiente usar `--config configs/lightgbm_initial.json`. El
+candidato seleccionado se conserva en los artefactos de su investigación.
 Ver [configuración y reanudación de AutoResearch](docs/autoresearch.md).
 
 Para ejecutar las pruebas:
@@ -110,7 +112,8 @@ predicciones y registros locales de MLflow quedan fuera de Git.
 - [Arquitectura del sistema](docs/architecture.md)
 - [AutoResearch: ejecución, restricciones y recuperación](docs/autoresearch.md)
 - [Evaluación, umbrales y MLflow](docs/evaluation.md)
-- [Resultados de marketing simulado](docs/marketing-results.md)
+- [Comparación actual y candidato](docs/independent-results.md)
+- [Resultados históricos de marketing](docs/marketing-results.md)
 - [Inferencia con Docker](inference/README.md)
 - [Permisos AWS](infra/iam/README.md) y [Batch Transform](infra/batch/README.md)
 

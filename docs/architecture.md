@@ -21,6 +21,9 @@ confirmar Stopped. Cuota pendiente de aprobación; no se lanzó el job.
 La imagen demo-v1 conserva su modelo y contrato de probabilidades. Los umbrales
 son una decisión posterior versionada con los escenarios; no están embebidos en
 el servidor de inferencia. El candidato demo no equivale a modelo aprobado.
+La selección actual vive en configs/candidate.json; enlaza snapshot, métricas,
+umbrales y hashes. Ver docs/independent-results.md. El código genérico no se
+sobrescribe automáticamente con el ganador y demo-v1 conserva su versión anterior.
 
 ## Implementado y pendiente
 
