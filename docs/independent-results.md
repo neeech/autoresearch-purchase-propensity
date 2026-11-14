@@ -60,7 +60,7 @@ coste monetario de llamadas API; el tiempo del controlador incluye LLM y entrena
 - Estado: **candidato no aprobado, no desplegado**. No se sobrescribió demo-v1.
   La imagen demo-v1 conserva el servidor anterior. La nueva imagen local
   candidate-v2 admite LightGBM y verificó 64 sesiones por HTTP, con tolerancia
-  1e-12 (máxima diferencia 9,28e-17). No se publicó en AWS.
+  1e-12 (máxima diferencia 9,28e-17). Está publicada en ECR con definición SageMaker; no se ejecutó inferencia AWS.
 - Revisar antes de aprobar la semántica de promedios históricos cuando faltan
   valores: el código generado convierte parte de esos faltantes en cero.
 

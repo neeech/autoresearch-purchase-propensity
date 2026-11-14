@@ -58,5 +58,19 @@
     "image_manifest": "sha256:ae2e7fc119677e1757e1a34a62459d8e02df94471fe6231757c2bdf813071ebb",
     "history_sessions": 32,
     "missing_duration_sessions": 24
+  },
+  "aws_preparation": {
+    "region": "us-east-2",
+    "model_name": "purchase-propensity-candidate-v2",
+    "image": "407264390138.dkr.ecr.us-east-2.amazonaws.com/purchase-propensity-inference@sha256:ae2e7fc119677e1757e1a34a62459d8e02df94471fe6231757c2bdf813071ebb",
+    "model_data": "s3://purchase-propensity-demo-7f4c2a/models/candidate-v2/model.tar.gz",
+    "input_data": "s3://purchase-propensity-demo-7f4c2a/batches/candidate-v2/smoke.jsonl",
+    "status": "model_definition_created_no_transform_job",
+    "approval": "demonstration_only_not_approved",
+    "quota_last_checked": {
+      "date": "2026-11-14",
+      "ml.m5.large_transform": 0,
+      "request_status": "CASE_OPENED"
+    }
   }
 }

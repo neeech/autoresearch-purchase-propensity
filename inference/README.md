@@ -81,8 +81,8 @@ conservan fuera del modelo para unir resultados por orden. El servidor valida
 esquema y tipo de contenido; no reconstruye historia a partir de datos crudos.
 
 La demostración anterior se verificó localmente con 16 sesiones y coincidencia
-con predicción directa (tolerancia absoluta 1e-12). Eso no acredita compatibilidad
-del nuevo candidato ni una ejecución AWS. Repetir la prueba con cada versión.
+con predicción directa (tolerancia absoluta 1e-12). Esa prueba histórica no acreditaba por sí sola compatibilidad
+del candidato LightGBM ni una ejecución AWS; la comprobación nueva se resume al final. Repetir la prueba con cada versión.
 Los tests del servidor están en [tests/test_inference.py](../tests/test_inference.py).
 
 Cargar únicamente paquetes confiables: joblib puede ejecutar código Python.
@@ -108,5 +108,5 @@ con tolerancia 1e-12 y rechazo de esquema/tipo de contenido incorrectos.
 La imagen local candidate-v2 verificó el candidato LightGBM en 64 sesiones:
 32 con historia y 24 con duración ausente. Máxima diferencia frente a referencia
 9,28e-17; esquema inválido 400 y contenido incorrecto 415. Se ejecutó sin red
-externa y se eliminó el contenedor. No se publicó en ECR ni se ejecutó en AWS.
+externa y se eliminó el contenedor. Se publicó en ECR como candidate-v2 y se creó su definición SageMaker. No se ejecutó un job AWS.
 Los metadatos de esa comprobación están en [configs/candidate.json](../configs/candidate.json).

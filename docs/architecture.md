@@ -57,12 +57,29 @@ no crean recursos automáticamente. Ver [IAM](../infra/iam/README.md) y
 
 El servidor admite el baseline sklearn y el candidato LightGBM. La imagen
 local candidate-v2 verificó 64 sesiones por HTTP, con equivalencia de predicciones
-a tolerancia 1e-12, incluyendo historia y duración ausente. No fue publicada.
+a tolerancia 1e-12, incluyendo historia y duración ausente. Se publicó en ECR como candidate-v2 y se creó una definición SageMaker; no se ejecutó un job.
 El candidato **no está aprobado ni desplegado**: falta revisar las agregaciones
-históricas y publicar una nueva versión de demostración, ejecutar un job AWS,
+históricas, ejecutar un job AWS,
 verificar salidas/logs y registrar la versión aprobada. La cuota de SageMaker debe consultarse al ejecutar, no asumirse.
 
 Pendientes posteriores: Model Registry, batches simulados con historia coherente,
 reporte de datos/probabilidades y programación diaria con reintentos controlados.
 No se implementó aún el esquema híbrido de AutoResearch sólo para features y
 Optuna para tuning; está definido como [siguiente metodología](model-comparison.md).
+
+## LLM externo e inferencia en AWS
+
+El LLM participa sólo en AutoResearch. El controlador envía código editable,
+configuración, métricas, esquema e historial de experimentos; no envía filas del
+CSV como parte de ese contexto. Las propuestas se entrenan y evalúan por código
+local. El pipeline de inferencia carga el modelo entrenado: no requiere Gemini,
+Groq ni una API key LLM para producir probabilidades.
+
+El lugar donde corre el controlador y el proveedor LLM son decisiones separadas:
+el controlador podría ejecutarse en AWS y seguir consultando una API externa.
+Para este proyecto demostrable el controlador manual local es suficiente. Antes
+de usar información confidencial, revisar el contenido enviado y las condiciones
+del proveedor. Gemini distingue uso de datos en servicios gratuitos y pagos;
+no asumir las mismas garantías de privacidad para ambos.
+
+Referencia: [condiciones Gemini API](https://ai.google.dev/gemini-api/terms).

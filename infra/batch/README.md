@@ -19,8 +19,8 @@ no los modelos, buckets, permisos ni imágenes remotos.
 7. Consultar cuota aplicada del tipo de instancia y revisar coste regional.
 
 La preparación histórica de la demo no equivale a verificación del candidato
-actual. El primer job aún no se ha validado. El servidor actualizado admite LightGBM, pero la imagen local candidate-v2
-aún debe publicarse y asociarse a una definición nueva de modelo para
+actual. El primer job aún no se ha validado. El servidor actualizado admite LightGBM. La imagen candidate-v2 fue publicada
+y asociada a una definición nueva de modelo para
 [el candidato](../../configs/candidate.json). No ejecutar el JSON antiguo
 esperando que use automáticamente el candidato nuevo.
 
@@ -41,3 +41,16 @@ archivos después del job y pueden generar costes. El presupuesto de facturació
 no sustituye el seguimiento de ejecución.
 
 Referencia: https://docs.aws.amazon.com/cli/latest/reference/sagemaker/create-transform-job.html
+
+## Nueva versión candidate-v2
+
+[model-candidate-v2.json](model-candidate-v2.json) conserva la definición creada:
+imagen ECR fijada por digest, paquete S3 nuevo y rol de ejecución existente.
+[smoke-candidate-v2.json](smoke-candidate-v2.json) prepara un ensayo de 64 sesiones
+de validación, con y sin historia. El paquete y ese lote ya se subieron a la cuenta
+de demostración; estas configuraciones no sustituyen su preparación en otra cuenta.
+
+El 14/11/2026 la cuota ml.m5.large de transformación en Ohio seguía en 0, solicitud
+CASE_OPENED. No se envió CreateTransformJob. Consultar cuota aplicada antes de
+ejecutar; definir seguimiento y parada, y evitar reutilizar un nombre de job.
+El candidato permanece sin aprobación final y demo-v1 se conserva intacta.
