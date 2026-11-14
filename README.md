@@ -191,7 +191,8 @@ tests/                  Pruebas de datos, loop, métricas e inferencia
 docs/                   Arquitectura, protocolos y resultados
 ```
 
-Datos procesados, investigaciones, predicciones, modelos, SQLite, artefactos
-MLflow y materiales personales de aprendizaje quedan fuera de Git. Las tareas
+Los archivos Parquet procesados, investigaciones, predicciones, modelos, SQLite,
+artefactos MLflow y materiales personales de aprendizaje quedan fuera de Git.
+El manifiesto de datos existente permanece versionado como metadato. Las tareas
 se gestionan en GitHub Issues. El entrenamiento y AutoResearch siguen manuales;
 no hay reentrenamiento ni aprobación automática en producción.
