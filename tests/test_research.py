@@ -65,6 +65,19 @@ with (out / 'results.csv').open('w', newline='') as file:
         return {'hypothesis': f'Try {value}',
                 'files': {EDITABLE[1]: f'def build_model(columns, config):\n    return {value}\n'}}
 
+    def test_custom_initial_config_is_frozen_for_resume(self):
+        config = {'data_dir': 'data/processed', 'model': 'lightgbm', 'lightgbm': {'num_leaves': 17}}
+        custom = self.root / 'configs/tuned.json'
+        custom.write_text(json.dumps(config))
+        git(self.root, 'add', 'configs/tuned.json')
+        git(self.root, 'commit', '-m', 'tuned config')
+        run(self.root, self.output, lambda context: None, experiments=0, config_path='configs/tuned.json')
+        protocol = json.loads((self.output / 'protocol.json').read_text())
+        self.assertEqual(protocol['config']['lightgbm'], {'num_leaves': 17})
+        run(self.root, self.output, lambda context: None, experiments=0, resume=True,
+            config_path='does-not-exist.json')
+        self.assertEqual(json.loads((self.output / 'protocol.json').read_text()), protocol)
+
     def test_real_commits_keep_discard_tie_failure_and_next_parent(self):
         proposals = [self.proposal(.4), self.proposal(.6), self.proposal(.4),
                      self.proposal("float('nan')"), self.proposal(.3)]

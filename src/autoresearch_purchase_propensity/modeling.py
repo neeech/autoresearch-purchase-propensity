@@ -5,11 +5,18 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
 
-from .features import build_features
+from .features import build_features, build_native_features
 
 
 def build_model(columns, config):
     """Choose columns after feature creation, including new experimental columns."""
+    if config.get('model') == 'lightgbm':
+        from lightgbm import LGBMClassifier
+        return Pipeline([
+            ('prepare', FunctionTransformer(build_native_features, validate=False)),
+            ('model', LGBMClassifier(**config['lightgbm'], random_state=config['seed'],
+                                    n_jobs=4, verbosity=-1, deterministic=True, force_col_wise=True)),
+        ])
     encoder = Pipeline([
         ('impute', SimpleImputer(strategy='constant', fill_value='__MISSING__')),
         ('encode', OneHotEncoder(handle_unknown='infrequent_if_exist',

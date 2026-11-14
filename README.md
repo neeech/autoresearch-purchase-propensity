@@ -20,6 +20,10 @@ La historia utiliza únicamente sesiones de días anteriores. El entrenamiento
 usa enero–abril de 2017 y la validación, mayo. Junio permanece fuera del loop de
 experimentación, aunque ya fue observado y no constituye un test ciego.
 
+El [notebook de análisis exploratorio](notebooks/01_eda.ipynb) presenta la estructura,
+calidad y evolución de los datos, y justifica las principales decisiones.
+Para ejecutarlo: `uv sync --extra eda` y seleccionar el Python de `.venv`.
+
 ## Cómo funciona
 
 ```text
@@ -35,7 +39,9 @@ Sesiones → procesamiento e historia → baselines → AutoResearch
 ```
 
 1. **Preparación:** normalización de datos, historia por usuario y separación temporal.
-2. **Baselines:** probabilidad constante y regresión logística como referencias.
+2. **Comparación actual:** tasa de compra constante, LightGBM optimizado con Optuna
+   y AutoResearch iniciado desde esa referencia. La regresión logística se conserva
+   como antecedente.
 3. **AutoResearch:** un LLM propone cambios en features y modelos. El controlador
    ejecuta cada experimento y conserva sólo mejoras de **log loss** en validación.
 4. **Evaluación:** se eligen umbrales según penalizaciones simuladas y se comparan
@@ -43,7 +49,7 @@ Sesiones → procesamiento e historia → baselines → AutoResearch
 5. **Trazabilidad y despliegue:** MLflow registra evaluaciones; Docker, S3, ECR y
    SageMaker permiten preparar la ejecución del modelo por lotes.
 
-## Resultados
+## Resultados de la investigación anterior
 
 Evaluación sobre **65.371 sesiones de mayo**, de las cuales 1.115 tuvieron compra:
 
@@ -107,3 +113,8 @@ predicciones y registros locales de MLflow quedan fuera de Git.
 - [Resultados de marketing simulado](docs/marketing-results.md)
 - [Inferencia con Docker](inference/README.md)
 - [Permisos AWS](infra/iam/README.md) y [Batch Transform](infra/batch/README.md)
+
+La comparación actual utiliza **tasa constante → LightGBM con Optuna
+→ AutoResearch**. Optuna completó 20 ensayos (log loss 0,03407); la nueva
+investigación de AutoResearch sigue pendiente. Ver [protocolo y comandos](docs/model-comparison.md). Los
+resultados publicados arriba corresponden a la investigación anterior.

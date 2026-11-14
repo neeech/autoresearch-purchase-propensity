@@ -273,16 +273,16 @@ def research_lock(output):
 
 
 def run(root, output, proposer, experiments=10, timeout=180, *, resume=False,
-        provider=None, model=None, rpm=None):
+        provider=None, model=None, rpm=None, config_path='configs/baselines.json'):
     """Continue an isolated research branch without changing the user's checkout."""
     root, output = Path(root).resolve(), Path(output).resolve()
     if git(root, 'status', '--porcelain'):
         raise ValueError('Commit or stash pending changes before starting the loop')
     with research_lock(output):
-        return run_locked(root, output, proposer, experiments, timeout, resume, provider, model, rpm)
+        return run_locked(root, output, proposer, experiments, timeout, resume, provider, model, rpm, config_path)
 
 
-def run_locked(root, output, proposer, experiments, timeout, resume, provider, model, rpm):
+def run_locked(root, output, proposer, experiments, timeout, resume, provider, model, rpm, config_path='configs/baselines.json'):
     if resume:
         protocol = json.loads((output / 'protocol.json').read_text(encoding='utf-8'))
         worktree = output / 'worktree'
@@ -333,7 +333,7 @@ def run_locked(root, output, proposer, experiments, timeout, resume, provider, m
         manifest = json.loads((data / 'manifest.json').read_text(encoding='utf-8'))
         first = max(entry['experiment'] for entry in history) + 1
     else:
-        config = json.loads((root / 'configs/baselines.json').read_text(encoding='utf-8'))
+        config = json.loads((root / config_path).read_text(encoding='utf-8'))
         source_data = root / config['data_dir']
         inputs = [source_data / f'{split}_{suffix}.parquet'
                   for split in ('train', 'validation') for suffix in ('X', 'y', 'metadata')]
@@ -462,6 +462,7 @@ def run_locked(root, output, proposer, experiments, timeout, resume, provider, m
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--config', default='configs/baselines.json', help='Initial training configuration; resume uses the frozen protocol')
     parser.add_argument('--resume', help='Existing run ID to continue on this machine')
     parser.add_argument('--experiments', type=int, default=10)
     parser.add_argument('--timeout', type=int, default=180)
@@ -493,7 +494,7 @@ def main():
     output = ROOT / 'experiments/autoresearch' / (args.resume or stamp)
     summary = run(ROOT, output, proposer, args.experiments, args.timeout,
                   resume=bool(args.resume), provider='saved' if args.proposals else args.provider,
-                  model=None if args.proposals else args.model or DEFAULT_MODELS[args.provider], rpm=args.rpm)
+                  model=None if args.proposals else args.model or DEFAULT_MODELS[args.provider], rpm=args.rpm, config_path=args.config)
     print(json.dumps(summary, indent=2))
     if summary['best_log_loss'] is None:
         raise SystemExit(1)

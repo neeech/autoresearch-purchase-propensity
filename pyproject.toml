@@ -24,6 +24,15 @@ autoresearch = "autoresearch_purchase_propensity.research:main"
 tracking = [
     "mlflow>=3.18.0",
 ]
+eda = [
+    "ipykernel>=7.4.0",
+    "matplotlib>=3.11.2",
+    "nbclient>=0.11.0",
+    "nbformat>=5.11.1",
+]
+tuning = [
+    "optuna>=5.0.0",
+]
 
 [build-system]
 requires = ["uv_build>=0.12.15,<0.13.0"]

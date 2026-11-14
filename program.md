@@ -88,3 +88,11 @@ Respondé únicamente JSON con esta estructura:
 
 Incluí sólo los archivos que cambies y su contenido completo. Nunca devuelvas
 comandos Git, parches ni modificaciones a otros archivos.
+
+Si la configuración inicial usa LightGBM, `modeling.py` invoca
+`build_native_features(frame)` de `features.py`: ésa es la función activa de
+features. Mantener NaN nativos y categorías compatibles; se puede extender para
+agregar historia previa y otras variables. El baseline inicial puede proceder de
+Optuna; buscar mejoras adicionales sobre ese estado, sin modificar el protocolo.
+En esta comparación no uses early stopping ni entrenes transformaciones con
+validación. Mantener presupuesto comparable y registrar todo cambio de estimador.
