@@ -114,7 +114,8 @@ predicciones y registros locales de MLflow quedan fuera de Git.
 - [Inferencia con Docker](inference/README.md)
 - [Permisos AWS](infra/iam/README.md) y [Batch Transform](infra/batch/README.md)
 
-La comparación actual utiliza **tasa constante → LightGBM con Optuna
-→ AutoResearch**. Optuna completó 20 ensayos (log loss 0,03407); la nueva
-investigación de AutoResearch sigue pendiente. Ver [protocolo y comandos](docs/model-comparison.md). Los
-resultados publicados arriba corresponden a la investigación anterior.
+La comparación actual evalúa **tasa constante, LightGBM con Optuna y AutoResearch
+independiente desde LightGBM sin tuning**. Ver [protocolo y comandos](docs/model-comparison.md).
+La corrida anterior que inició desde Optuna se conserva como
+[antecedente incremental](docs/autoresearch-optuna-results.md), no como una
+comparación independiente de estrategias.

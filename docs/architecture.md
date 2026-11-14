@@ -3,7 +3,7 @@
 Dos flujos separados comparten un modelo versionado:
 
 ```text
-Tasa constante / LightGBM+Optuna / AutoResearch (local, log loss)
+Tasa constante / LightGBM+Optuna / AutoResearch independiente (local, log loss)
   → candidato congelado → evaluación probabilística y costes simulados
   → tracking MLflow local → revisión humana → empaquetado
   → S3 (modelo) + ECR (imagen) → definición SageMaker

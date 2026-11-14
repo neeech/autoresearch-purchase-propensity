@@ -1,15 +1,37 @@
-# Comparación de tres modelos
+# Comparación independiente: Optuna y AutoResearch
 
-1. **Constante:** tasa de compra calculada sólo en enero–abril.
-2. **LightGBM + Optuna:** 20 ensayos secuenciales, CPU local (4 threads), semilla
-   42, log loss de mayo, sin early stopping ni pruning. Duración NaN y categorías
-   son tratadas nativamente; no se eliminan rebotes ni se imputa duración cero.
-3. **AutoResearch:** parte de la configuración ganadora de Optuna y puede mejorar
-   features, historia y modelos. No hay un cuarto modelo LightGBM fijo.
+## Objetivo
 
-La regresión logística y resultados antiguos se conservan como antecedentes,
-no como integrantes de esta nueva comparación. El candidato antiguo de
-AutoResearch no demuestra mejora sobre la nueva referencia de Optuna.
+Comparar tres soluciones con los mismos datos y evaluación temporal:
+
+1. **Constante:** tasa de compra de enero–abril.
+2. **LightGBM + Optuna:** búsqueda de hiperparámetros con features de sesión fijas.
+3. **AutoResearch independiente:** inicia con `configs/lightgbm_initial.json`,
+   sin parámetros ganadores ni historial de Optuna. Puede modificar features,
+   historia, modelos e hiperparámetros dentro de los permisos existentes.
+
+Es una comparación de estrategias completas, no sólo de optimizadores: el agente
+puede hacer ingeniería de features y cambiar de estimador; Optuna usa el espacio
+LightGBM predefinido. El punto inicial del agente usa valores convencionales
+explícitos (100 árboles, learning_rate 0.1, 31 hojas), no un resultado de tuning.
+El modelo inicial sólo sirve como punto de partida; no es una cuarta búsqueda.
+
+## Protocolo fijo
+
+- Train: enero–abril de 2017. Validation: mayo. Junio fuera de ambas búsquedas.
+- Historia: únicamente días estrictamente anteriores a cada sesión; nunca futuro.
+- Log loss como objetivo; Average Precision como métrica complementaria.
+- Semilla 42, CPU local, LightGBM con 4 threads. Sin early stopping ni pruning.
+- Optuna: 20 ensayos entrenados; AutoResearch: hasta 20 propuestas, más medición
+  inicial. Registrar propuestas fallidas, entrenamientos efectivos y tiempos;
+  iguales cantidades solicitadas no implican igual cómputo.
+- Misma política de faltantes: LightGBM inicial trata NaN y categorías nativamente.
+- El agente recibe configuración activa, código editable y sólo el historial de
+  su nueva investigación. No recibe resultados de otras investigaciones.
+
+Mayo se reutiliza para tuning y selección de umbrales: resultados exploratorios,
+potencialmente optimistas. Junio ya observado no es un test completamente ciego;
+confirmar generalización requerirá un período independiente. No modificar splits.
 
 ## Ejecutar
 
@@ -19,80 +41,46 @@ uv run --extra tuning --extra tracking python -m autoresearch_purchase_propensit
   --trials 20 --output experiments/optuna/MI_ESTUDIO --mlflow
 ```
 
-Se reutilizan train.py, load_data, evaluate.metrics y los artefactos de
-entrenamiento. El estudio congela exclusivamente train/validation y manifiesto,
-guarda Optuna SQLite, resultados por ensayo, código, modelos y best_config.json.
-MLflow registra parámetros/métricas/tiempos de cada ensayo, con referencias a los
-artefactos locales; no registra automáticamente cada modelo en Model Registry.
+La referencia Optuna existente `marketing-baseline-v1` completó 20 ensayos y obtuvo
+log loss 0,03407013. Conserva artefactos, datos congelados, parámetros y tiempos.
+No hace falta repetirla si los hashes de datos y la preparación siguen iguales.
 
-Con checkout limpio, para iniciar una investigación nueva desde el ganador:
+Con GEMINI_API_KEY configurada y checkout limpio, iniciar **una investigación nueva**:
 
 ```bash
-uv run autoresearch --config experiments/optuna/MI_ESTUDIO/best_config.json \
+uv run autoresearch --provider gemini --model gemini-3.6-flash \
+  --config configs/lightgbm_initial.json \
   --experiments 20 --timeout 180 --rpm 10
 ```
 
-La configuración inicial se congela dentro del protocolo; al reanudar se usa ese
-protocolo, no se cambia el modelo inicial. Se reentrena desde cero. En LightGBM
-la función activa es build_native_features, editable por el agente. Los archivos
-originales de datos, los splits y el evaluador no se modifican. No hace falta AWS.
-No se dispara el LLM automáticamente al terminar Optuna.
+No usar `--resume` ni `best_config.json`. El identificador y la rama se generan
+automáticamente. Primero se mide el modelo inicial; después se conserva sólo una
+mejora estricta. Las cuotas y disponibilidad del modelo dependen del proveedor;
+revisar el error si se detiene. Una clave nueva puede compartir cuota con otras.
 
-## Decisiones de campaña
+## Estado de las investigaciones
 
-Para cada modelo, usar marketing.py sobre sus probabilidades de mayo; cada uno
-elige sus umbrales con las mismas penalizaciones. El baseline constante sólo
-puede seleccionar a todos o a nadie. Añadir --mlflow para registrar la evaluación.
+| Investigación | Origen | Resultado | Uso |
+|---|---|---|---|
+| Optuna marketing-baseline-v1 | Espacio LightGBM definido | 0,03407013 | Referencia independiente |
+| AutoResearch 20261114T172825124860Z | Ganador de Optuna | 0,03321754 | Antecedente incremental; no comparación independiente |
+| Nuevo AutoResearch | lightgbm_initial.json | Pendiente | Comparación independiente |
 
-El reporte distingue contacts, direct_spend y total_penalty. Con --contact-cost 1
-cada contacto representa una unidad monetaria simulada; los adicionales de FP/FN
-son penalizaciones hipotéticas, no desembolsos observados. Por tanto, el menor
-total_penalty no significa necesariamente menor direct_spend. Se registran ambos.
+La corrida anterior no se altera. Ver [resultados incrementales](autoresearch-optuna-results.md).
+El mejor código permanece en su workspace, no se copia al baseline inicial.
 
-Mayo se reutiliza para tuning/modelos y umbrales: sus resultados son exploratorios.
-Ninguna transformación se ajusta en mayo; ninguna fila ve historia futura ni del
-mismo día. Junio queda fuera de estas decisiones y ya no es un test ciego. Para
-confirmar generalización hará falta un período independiente. Se comparan tanto
-número de ensayos como tiempos; AutoResearch modifica features además de parámetros,
-por lo que esto mide mejora incremental, no igualdad entre optimizadores.
+## Evaluación y MLOps
 
-## Paso a AWS
+Recuperar cada modelo con su snapshot original y comparar predicciones sobre las
+mismas filas. Elegir umbral por modelo en mayo con los escenarios de marketing;
+congelarlo antes de evaluar otro período. La constante sólo permite contactar a
+todos o a nadie. Registrar métricas, umbrales, hashes y reportes en MLflow local.
 
-Primero congelar modelo, código, configuración y umbrales; revisar y aprobar.
-Después empaquetar una versión nueva. La imagen demo-v1 no se sobrescribe ni se
-considera compatible automáticamente con el nuevo pipeline: su adaptador actual
-asume el pipeline anterior. Revisar dependencias y contrato, probar localmente y
-recién publicar en ECR/S3. Orquestación diaria y registro de modelos siguen pendientes.
+Separar contacts, direct_spend (1 unidad simulada por contacto, configurable) y
+total_penalty. FP/FN incluyen penalizaciones hipotéticas; no presentar su reducción
+como dinero ahorrado ni efecto causal de marketing. La clasificación es retrospectiva
+sobre sesiones terminadas, no una predicción de compras futuras por una campaña.
 
-## Primera referencia medida (14/11/2026)
-
-20 ensayos completados y registrados en MLflow. Ganador: ensayo 13,
-log loss 0.03407013; constante: 0.08722830.
-Sólo train enero–abril y validación mayo, sin early stopping.
-
-| Modelo | Umbral principal | Contactos / gasto directo simulado | Penalización total |
-|---|---:|---:|---:|
-| Constante | No contactar | 0 | 11150 |
-| LightGBM + Optuna | 0.266334 | 1340 | 8274 |
-| AutoResearch desde Optuna | Pendiente | Pendiente | Pendiente |
-
-La penalización cae 25.79 % respecto a la constante, pero el gasto directo
-crece de 0 a 1340 unidades. No son ahorros monetarios observados. Precisión
-51.04%, recall 61.35%, 684 TP, 656 FP y 431 FN.
-Los umbrales fueron seleccionados en mayo; no son resultados de test independiente.
-
-Resultados locales: `experiments/optuna/marketing-baseline-v1/` y
-`experiments/evaluation/optuna-v1/`. Se conserva SQLite, modelos, snapshots, hashes
-y predicciones fuera de Git. La nueva búsqueda del agente no se ejecutó porque
-GROQ_API_KEY no está disponible en el proceso del asistente. Desde una terminal
-con esa variable configurada y el checkout limpio:
-
-```bash
-uv run autoresearch \
-  --config experiments/optuna/marketing-baseline-v1/best_config.json \
-  --experiments 20 --timeout 180 --rpm 10
-```
-
-Este comando requiere conservar el estudio local. En otra máquina, repetir primero
-el estudio para generar la configuración y los datos congelados. No confundir
-el candidato histórico con el resultado todavía pendiente de esta investigación.
+Después de revisión y aprobación: empaquetar una nueva versión, adaptar y probar
+la imagen de inferencia antes de subirla a ECR/S3. No sobrescribir demo-v1: su
+servidor asume el pipeline anterior. AWS y el Model Registry siguen pendientes.

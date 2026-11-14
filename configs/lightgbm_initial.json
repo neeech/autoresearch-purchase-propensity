@@ -1,0 +1,21 @@
+{
+  "data_dir": "data/processed",
+  "output_root": "experiments/training",
+  "seed": 42,
+  "logistic": {
+    "C": 1.0,
+    "solver": "liblinear",
+    "max_iter": 500,
+    "tol": 1e-05
+  },
+  "min_category_frequency": 20,
+  "model": "lightgbm",
+  "lightgbm": {
+    "n_estimators": 100,
+    "learning_rate": 0.1,
+    "num_leaves": 31,
+    "min_child_samples": 20,
+    "colsample_bytree": 1.0,
+    "reg_lambda": 0.0
+  }
+}

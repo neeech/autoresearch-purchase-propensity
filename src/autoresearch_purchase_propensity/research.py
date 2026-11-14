@@ -380,7 +380,7 @@ def run_locked(root, output, proposer, experiments, timeout, resume, provider, m
         started = time.monotonic()
         parent = best_commit
         entry = {'experiment': number,
-                 'hypothesis': 'Constant and logistic baselines' if not number else 'Proposal unavailable',
+                 'hypothesis': f"Constant and {config.get('model', 'logistic')} baselines" if not number else 'Proposal unavailable',
                  'parent_commit': parent, 'commit': None, 'status': 'failed', 'metrics': None,
                  'execution': execution, 'provider': provider, 'model': model}
         stop = False
@@ -388,6 +388,8 @@ def run_locked(root, output, proposer, experiments, timeout, resume, provider, m
         try:
             if number:
                 context = {'instructions': instructions, 'best_score': best_score,
+                           'training_config': {key: value for key, value in config.items()
+                                               if key not in ('data_dir', 'output_root')},
                            'data': {'columns': manifest.get('features', []),
                                     'history_fields': manifest.get('history_fields', []),
                                     'splits': {name: manifest.get('splits', {}).get(name)
