@@ -4,10 +4,11 @@
 SageMaker: puerto 8080, GET /ping y POST /invocations. Recibe JSON Lines y
 responde una probabilidad por línea, conservando el orden. No entrena modelos.
 
-**Compatibilidad:** el adaptador actual requiere un pipeline sklearn con una
-etapa `features` que contenga la selección numérica ajustada. El baseline
-logístico de train.py cumple ese contrato. El candidato LightGBM seleccionado
-no lo cumple: requiere adaptación antes de usar este servidor.
+**Compatibilidad:** pipelines sklearn con predict_proba, incluido el baseline
+logístico y el candidato LightGBM. Los tipos numéricos se definen por las columnas
+originales de sesión, sin depender de una etapa interna del modelo. Los NaN se
+conservan para que cada pipeline aplique su tratamiento. La imagen incluye
+LightGBM y libgomp1. Otros estimadores requieren revisar sus dependencias.
 
 ## Preparar los archivos desde un clon
 
@@ -87,3 +88,25 @@ Los tests del servidor están en [tests/test_inference.py](../tests/test_inferen
 Cargar únicamente paquetes confiables: joblib puede ejecutar código Python.
 La imagen no contiene modelo, datos ni credenciales. En AWS SageMaker descarga y
 descomprime el modelo en /opt/ml/model. Ver [configuración batch](../infra/batch/README.md).
+
+## Verificar equivalencia de una versión
+
+Con el servidor activo, una muestra JSON Lines y las probabilidades de referencia
+CSV del mismo modelo en el mismo orden:
+
+```bash
+uv run python scripts/verify_inference.py \
+  --input experiments/deployment/local/sample.jsonl \
+  --expected RUTA_A_PREDICCIONES_DE_REFERENCIA.csv
+```
+
+El CSV debe contener probability. La referencia debe proceder de la ejecución
+directa del modelo, no del servidor que se está comprobando. No usar predicciones
+de otra muestra o modelo. El script verifica salud, filas, rango, equivalencia
+con tolerancia 1e-12 y rechazo de esquema/tipo de contenido incorrectos.
+
+La imagen local candidate-v2 verificó el candidato LightGBM en 64 sesiones:
+32 con historia y 24 con duración ausente. Máxima diferencia frente a referencia
+9,28e-17; esquema inválido 400 y contenido incorrecto 415. Se ejecutó sin red
+externa y se eliminó el contenedor. No se publicó en ECR ni se ejecutó en AWS.
+Los metadatos de esa comprobación están en [configs/candidate.json](../configs/candidate.json).

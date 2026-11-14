@@ -58,8 +58,9 @@ coste monetario de llamadas API; el tiempo del controlador incluye LLM y entrena
   artefactos, ejecutar [el protocolo](model-comparison.md), no asumir que las
   rutas históricas existen en otro clon.
 - Estado: **candidato no aprobado, no desplegado**. No se sobrescribió demo-v1.
-  La imagen existente necesita adaptar el servidor y sus dependencias para este
-  pipeline LightGBM. Empaquetado no equivale a compatibilidad de inferencia verificada.
+  La imagen demo-v1 conserva el servidor anterior. La nueva imagen local
+  candidate-v2 admite LightGBM y verificó 64 sesiones por HTTP, con tolerancia
+  1e-12 (máxima diferencia 9,28e-17). No se publicó en AWS.
 - Revisar antes de aprobar la semántica de promedios históricos cuando faltan
   valores: el código generado convierte parte de esos faltantes en cero.
 

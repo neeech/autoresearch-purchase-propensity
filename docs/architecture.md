@@ -55,11 +55,12 @@ CloudWatch. Las configuraciones versionadas son ejemplos ligados a una cuenta;
 no crean recursos automáticamente. Ver [IAM](../infra/iam/README.md) y
 [batch](../infra/batch/README.md).
 
-El servidor actual admite el pipeline sklearn de la demostración anterior. El
-candidato LightGBM **no está aprobado ni desplegado**: falta adaptar el servidor,
-revisar dependencias y agregaciones históricas, y verificar equivalencia local.
-Después corresponde ejecutar un job AWS, verificar salidas/logs y registrar la
-versión aprobada. La cuota de SageMaker debe consultarse al ejecutar, no asumirse.
+El servidor admite el baseline sklearn y el candidato LightGBM. La imagen
+local candidate-v2 verificó 64 sesiones por HTTP, con equivalencia de predicciones
+a tolerancia 1e-12, incluyendo historia y duración ausente. No fue publicada.
+El candidato **no está aprobado ni desplegado**: falta revisar las agregaciones
+históricas y publicar una nueva versión de demostración, ejecutar un job AWS,
+verificar salidas/logs y registrar la versión aprobada. La cuota de SageMaker debe consultarse al ejecutar, no asumirse.
 
 Pendientes posteriores: Model Registry, batches simulados con historia coherente,
 reporte de datos/probabilidades y programación diaria con reintentos controlados.

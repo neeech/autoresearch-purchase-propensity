@@ -14,7 +14,8 @@ def create_app(model_dir=None):
     sys.path.insert(0, str(root / 'code'))
     model = joblib.load(root / 'model.joblib')
     columns = [c for c in json.loads((root / 'data_manifest.json').read_text())['features'] if c != 'month']
-    numeric = next(cols for name, _, cols in model.named_steps['features'].transformers_ if name == 'numeric')
+    # Raw session types are independent of model-specific preprocessing steps.
+    numeric = {'visitNumber', 'bounces', 'hits', 'pageviews', 'timeOnSite', 'day_of_week'}
 
     def app(environ, start_response):
         status, body, content_type = '200 OK', b'', 'text/plain'

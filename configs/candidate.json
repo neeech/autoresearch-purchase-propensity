@@ -48,5 +48,15 @@
     "demo-v1 inference adapter is not compatible with this LightGBM pipeline without changes"
   ],
   "package": "experiments/deployment/candidate-independent-v1/model.tar.gz",
-  "package_sha256": "6af907d74044299b7fd71a6b019ded15710d59fafd9b7bc3b7414fccf1ff55c8"
+  "package_sha256": "6af907d74044299b7fd71a6b019ded15710d59fafd9b7bc3b7414fccf1ff55c8",
+  "local_inference": {
+    "status": "passed",
+    "rows": 64,
+    "absolute_tolerance": 1e-12,
+    "max_absolute_difference": 9.280770596475918e-17,
+    "image": "purchase-propensity-inference:candidate-v2",
+    "image_manifest": "sha256:ae2e7fc119677e1757e1a34a62459d8e02df94471fe6231757c2bdf813071ebb",
+    "history_sessions": 32,
+    "missing_duration_sessions": 24
+  }
 }

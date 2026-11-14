@@ -19,8 +19,10 @@ no los modelos, buckets, permisos ni imágenes remotos.
 7. Consultar cuota aplicada del tipo de instancia y revisar coste regional.
 
 La preparación histórica de la demo no equivale a verificación del candidato
-actual. El primer job aún no se ha validado. El servidor requiere adaptación
-para LightGBM antes de desplegar [el candidato](../../configs/candidate.json).
+actual. El primer job aún no se ha validado. El servidor actualizado admite LightGBM, pero la imagen local candidate-v2
+aún debe publicarse y asociarse a una definición nueva de modelo para
+[el candidato](../../configs/candidate.json). No ejecutar el JSON antiguo
+esperando que use automáticamente el candidato nuevo.
 
 ## Ejecución y seguimiento
 

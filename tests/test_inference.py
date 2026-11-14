@@ -43,6 +43,20 @@ class InferenceTests(unittest.TestCase):
         self.assertTrue(np.isnan(frame.hits.iloc[1]))
         self.assertNotIn('month', frame)
 
+    def test_native_pipeline_without_column_transformer(self):
+        self.model.named_steps = {'prepare': Mock(), 'model': Mock()}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'data_manifest.json').write_text(json.dumps({
+                'features': ['hits', 'timeOnSite', 'source', 'history']}))
+            with patch('inference.server.joblib.load', return_value=self.model):
+                self.app = create_app(root)
+            body = b'{"hits":2,"timeOnSite":null,"source":null,"history":[]}\n'
+            self.assertEqual(self.request(body)[0], '200 OK')
+            frame = self.model.predict_proba.call_args.args[0]
+            self.assertEqual(str(frame.timeOnSite.dtype), 'float64')
+            self.assertTrue(frame.timeOnSite.isna().all())
+
     def test_rejects_wrong_schema_outcomes_and_content_type(self):
         for body in (b'bad json', b'', b'{"hits":2}',
                      b'{"hits":2,"source":"a","history":[],"target":1}',
