@@ -1,174 +1,197 @@
-# Autoresearch: propensión de compra
+# Purchase Propensity · AutoResearch y despliegue batch
 
-POC de un loop con commits: proponer un cambio, entrenar, evaluar en validación
-y conservarlo sólo si mejora log loss. Clasifica sesiones terminadas.
+Proyecto demostrable de Machine Learning para estimar la probabilidad de compra
+asociada a una sesión web terminada. Combina un pipeline temporal de datos,
+baselines, experimentación asistida por LLM, evaluación con penalizaciones de
+marketing simuladas y preparación de inferencia batch en AWS.
 
-## Preparar y ejecutar
+**Estado:** entrenamiento, AutoResearch, evaluación, MLflow local e inferencia
+Docker funcionan. El primer Batch Transform en AWS sigue pendiente de cuota.
+El candidato publicado para la demo todavía no es un modelo aprobado para producción.
 
-Requiere Python >= 3.13, uv y Git con nombre/email configurados. Desde la raíz:
+## Problema y datos
+
+Cada fila representa una sesión: visitas, acciones, páginas vistas, duración,
+fuente de tráfico, dispositivo y geografía. `fullVisitorId` identifica al usuario.
+El target es `transactions > 0`; se asume que las transacciones faltantes son cero.
+Los datos originales se esperan en `data/raw/data.csv`.
+
+La mayoría de usuarios son nuevos cada mes. Por eso se consideran tanto las
+variables de la sesión como su historia disponible, cuando existe. La historia
+contiene sólo sesiones del mismo usuario de **días estrictamente anteriores**;
+excluye la sesión actual y otras del mismo día. Se construye cronológicamente
+antes de separar los períodos, sin usar el futuro.
+
+| Partición | Período de 2017 | Uso |
+|---|---|---|
+| Entrenamiento | Enero–abril | Ajustar modelo y transformaciones |
+| Validación | Mayo | Seleccionar modelos y umbrales |
+| Evaluación posterior | Junio | Fuera de AutoResearch; ya observado, no es un test ciego |
+
+No se usan transacciones, ingresos ni identificadores actuales como features.
+Las variables de comportamiento sólo están completas al terminar la sesión:
+**este proyecto no predice antes de la compra ni mide el efecto de una campaña**.
+
+## Workflow
+
+```text
+CSV de sesiones
+  → normalización + target + historia temporal
+  → particiones Parquet
+  → baselines: probabilidad constante y regresión logística
+  → AutoResearch: proponer → entrenar → evaluar → conservar/revertir
+  → candidato congelado
+  → probabilidades + umbrales por costes simulados + comparación de baselines
+  → MLflow local: registro de evaluaciones
+  → revisión humana → empaquetado del modelo
+  → S3 (modelo) + ECR (imagen Docker) → SageMaker Batch Transform
+  → probabilidades en S3 + logs en CloudWatch
+```
+
+El último tramo está preparado, pero aún no se ejecutó en AWS. La generación de
+lotes simulados diarios y su programación son trabajo pendiente.
+
+## Ejecutar localmente
+
+Requisitos: Python >= 3.13, [uv](https://docs.astral.sh/uv/) y Git configurado.
+Docker y acceso AWS sólo son necesarios para las prácticas de despliegue.
 
 ```bash
 uv sync
 uv run python -m autoresearch_purchase_propensity.preprocess
+uv run python -m autoresearch_purchase_propensity.train
 uv run python -m unittest discover -s tests -v
 ```
 
-Definir `GROQ_API_KEY` en el entorno y commitear la implementación antes de
-iniciar el loop, que requiere un checkout limpio:
+El entrenamiento guarda modelo, código, configuración, métricas y probabilidades
+de validación en `experiments/training/<run>/`. No entrena sobre junio.
+
+### AutoResearch
+
+Con un checkout limpio y `GROQ_API_KEY` configurada en el entorno:
 
 ```bash
-uv run autoresearch --experiments 10 --timeout 180
+uv run autoresearch --experiments 10 --timeout 180 --rpm 10
 ```
 
-Usa HTTP directamente, sin SDK ni framework de agentes. Groq es el proveedor
-predeterminado y usa `openai/gpt-oss-120b`. El modelo se puede cambiar con
-`--model`; su disponibilidad depende del proveedor.
+El LLM propone una hipótesis y cambios estructurados en `features.py` y
+`modeling.py`. El controlador entrena desde cero y conserva sólo mejoras estrictas
+**de log loss en mayo**. No optimiza F1 ni el coste de marketing. El código base
+actual sigue siendo logístico: el candidato ganador vive en su snapshot de investigación.
 
-Para usar Gemini con una clave de [Google AI Studio](https://aistudio.google.com/apikey),
-definir `GEMINI_API_KEY` en el entorno. Ejemplo en PowerShell:
+Cada investigación usa rama/worktree propios, checkpoints Git, datos congelados,
+logs e historial JSONL. Se puede continuar con `--resume RUN_ID`. Datos, target,
+splits, métricas y controlador están protegidos frente a propuestas. Estos
+controles no equivalen a una sandbox de seguridad para código Python hostil;
+usar propuestas confiables y no ejecutar código generado con credenciales AWS.
 
-```powershell
-$env:GEMINI_API_KEY = 'TU_API_KEY'
-uv run autoresearch --provider gemini --model gemini-3.8-flash --rpm 10 --experiments 10 --timeout 600
-```
+Sin API: `uv run autoresearch --experiments 0`. También se admiten propuestas
+guardadas y Gemini. Ver [opciones, límites y recuperación](docs/autoresearch.md)
+y [contrato del agente](program.md). No guardar claves en archivos versionados.
 
-Con `--provider gemini`, el modelo predeterminado es `gemini-3.8-flash`, por lo
-que `--model` es opcional. Usa la API nativa `generateContent` con respuesta JSON
-estructurada y los mismos reintentos que Groq. Ninguna de las dos claves se pasa
-al entrenamiento. Commiteá los cambios antes de iniciar una nueva ejecución.
+### Umbrales y costes simulados
 
-`--rpm N` limita las llamadas a la API por minuto, incluidos los reintentos,
-para cualquiera de los proveedores. Las llamadas se espacian al menos `60 / N`
-segundos: `--rpm 10` deja 6 segundos entre inicios. La primera llamada es inmediata;
-el tiempo de respuesta y entrenamiento cuenta como espera. `Retry-After` también
-se respeta. Es un máximo, no una cantidad obligatoria; sin `--rpm` no se agrega
-esta espera. El límite es local a esta ejecución y no controla tokens ni llamadas
-de otros procesos que compartan la clave.
+Después de congelar el modelo, se elige el umbral de menor penalización en
+validación. Los costes están en [configs/marketing.json](configs/marketing.json):
 
-Sólo baselines, sin API:
+| Escenario | TP | TN | FP | FN |
+|---|---:|---:|---:|---:|
+| Cuidar presupuesto (`budget`) | 1 | 0 | 10 | 5 |
+| Equilibrado (`balanced`) | 1 | 0 | 5 | 5 |
+| Principal: oportunidades (`opportunities`) | 1 | 0 | 5 | 10 |
+
+Coste medio = `(TP*cTP + TN*cTN + FP*cFP + FN*cFN) / N`.
+Son penalizaciones hipotéticas: FP incluye desperdicio de campaña y FN una
+preferencia por no dejar compradores fuera. No representan dólares ni ventas
+perdidas demostradas. `budget` no se refiere al presupuesto AWS.
 
 ```bash
-uv run autoresearch --experiments 0
+# Sustituir RUN por el directorio generado por train.
+uv run python -m autoresearch_purchase_propensity.marketing \
+  experiments/training/RUN/candidate_validation_predictions.csv \
+  --model-id RUN --period validation-2017-05 \
+  --output experiments/evaluation/RUN-validation
 ```
 
-Propuestas guardadas, sin API:
+Se compara contra contactar a todos y a nadie. Repetir con el modelo baseline,
+elegir su propio umbral y comparar sobre las mismas filas. `--thresholds` aplica
+umbrales congelados a otro período sin reajustarlos. Ver [protocolo](docs/evaluation.md).
+
+### MLflow
 
 ```bash
-uv run autoresearch --experiments 2 --proposals propuestas.json
+uv sync --extra tracking
+# Añadir --mlflow al comando de evaluación para registrar sus resultados.
+uv run --extra tracking mlflow ui \
+  --backend-store-uri sqlite:///mlflow.db --host 127.0.0.1
 ```
 
-El JSON contiene una lista de propuestas según [program.md](program.md).
+Abrir http://127.0.0.1:5000 → `purchase-propensity-marketing` → **Runs**.
+SQLite conserva metadatos; los artefactos contienen reportes y umbrales.
+El registro es opcional y local: no reentrena ni despliega modelos. Model Registry
+y la aprobación/versionado de modelos en MLflow todavía están pendientes.
 
-## Continuar una investigación
+## Resultados de validación
 
-Para agregar 10 intentos a una investigación existente en la misma máquina:
+Comparación sobre 65.371 sesiones de mayo, 1.115 con compra. Cada modelo eligió
+su umbral en ese mismo período; estos costes pueden ser optimistas.
+
+| Modelo | Log loss ↓ | Umbral principal | Penalización media ↓ |
+|---|---:|---:|---:|
+| Probabilidad constante | 0,087228 | No contactar | 0,170565 |
+| Regresión logística | 0,038736 | 0,184553 | 0,133469 |
+| HistGradientBoosting seleccionado | **0,033616** | **0,238546** | **0,123816** |
+
+El candidato reduce la penalización un 7,23 % frente al baseline logístico en
+este escenario. No es evidencia de retorno económico real ni de generalización
+fuera de mayo. Ver [resultados, trazabilidad y limitaciones](docs/marketing-results.md).
+El candidato conserva early stopping y un warning conocido de división en historia
+vacía; ambos deben revisarse antes de aprobar una versión final.
+
+## AWS e inferencia
+
+| Herramienta | Función y estado |
+|---|---|
+| S3 | Modelo empaquetado y lote de prueba almacenados; destino de predicciones |
+| Docker / ECR | Servidor reproducible, imagen probada localmente y publicada |
+| IAM | Rol de ejecución con política acotada preparada |
+| SageMaker Batch Transform | Definición/configuración preparadas; primer job pendiente de cuota |
+| CloudWatch | Logs previstos; falta comprobarlos con un job real |
+| AWS Budgets | Budget creado; alertas/configuración final pendientes de verificar |
+| Orquestación diaria | Pendiente; sólo se automatizará inferencia |
 
 ```bash
-uv run autoresearch --resume <run_id> --experiments 10 --provider gemini --rpm 10 --timeout 600
+uv run python scripts/package_model.py RUTA_AL_ARTEFACTO \
+  experiments/deployment/MI_VERSION/model.tar.gz
 ```
 
-`<run_id>` es el nombre de la carpeta en `experiments/autoresearch/`. Se reutilizan
-los datos congelados, el mejor commit y su score, sin repetir las baselines.
-El LLM recibe el historial acumulado y los nuevos ensayos continúan la numeración
-sin sobrescribir resultados. Cada candidato se entrena desde cero.
+Empaquetar no aprueba ni sube el modelo. La imagen recibe sesiones procesadas con
+historia en JSON Lines y devuelve probabilidades; el umbral se aplica después.
+Ver [servidor y Docker](inference/README.md), [permisos IAM](infra/iam/README.md),
+[primer batch](infra/batch/README.md) y [arquitectura](docs/architecture.md).
+Los ejemplos de infraestructura están ligados a la cuenta/región de esta demo;
+revisar identificadores, permisos, cuotas y costes antes de reutilizarlos.
 
-Podés cambiar de proveedor o modelo con `--provider` y `--model`; cada ejecución
-y ensayo registra cuál se usó. Las opciones de proveedor, modelo, RPM y timeout
-se indican para cada ejecución; no se heredan de la anterior. También se puede
-continuar con `--proposals` sin llamadas a una API.
+## Estructura
 
-Conservá la carpeta completa, incluido el worktree. La reanudación verifica los
-hashes de los datos congelados y archivos protegidos, y que el checkout actual
-mantenga el protocolo original. No permite dos ejecuciones simultáneas de la
-misma investigación.
-
-Los resultados se guardan después de cada ensayo. Si un intento quedó incompleto,
-se registra como interrumpido y se continúa con un número nuevo desde el mejor
-confirmado. `Ctrl+C` guarda el estado y detiene el loop. Si el proveedor identifica
-explícitamente una cuota diaria agotada en una respuesta 429, también se detiene;
-otros límites y fallos transitorios conservan los reintentos habituales.
-
-## Contrato
-
-| Archivo | Responsabilidad | Editable por el LLM |
-|---|---|---|
-| `history.py` | Qué sesiones anteriores puede ver cada fila | No |
-| `preprocess.py` | Normalización, target y split temporal | No |
-| `features.py` | Variables de sesión y agregaciones del pasado | Sí |
-| `modeling.py` | Pipeline y modelo | Sí |
-| `train.py` y `evaluate.py` | Entrenamiento y métricas | No |
-| `research.py` | Propuestas, commits, comparación y registro | No |
-| `program.md` | Instrucciones del agente | No |
-
-Train: enero–abril de 2017. Validation: mayo. Test: junio, fuera del loop.
-El target es `transactions > 0`; transacciones vacías se interpretan como cero.
-
-Cada fila recibe `history`, una lista de sesiones del mismo usuario de días
-estrictamente anteriores, con `purchased` y `days_ago`. El agente elige tasas,
-promedios, ventanas u otras agregaciones en `features.py`, preservando filas
-y orden. Debe convertir esa lista en variables escalares y quitarla antes del
-estimador. Las transformaciones aprendidas se ajustan únicamente en train.
-
-Primero se miden las baselines constante y logística usando la sesión actual.
-Después, el prompt pide investigar el aporte del historial. Cada candidato
-se commitea y se evalúa en un intérprete nuevo. Sólo se conserva una mejora
-estricta; empates, errores y timeouts vuelven al mejor commit.
-
-Cada llamada a la API tiene hasta tres intentos para errores transitorios,
-con `Retry-After` si el proveedor lo indica o esperas de 2 y 4 segundos.
-También se reintenta un fallo de generación de JSON. Un request inválido no
-se repite automáticamente con el mismo contenido. Si se agotan los intentos,
-el error aparece en consola, se registra y el loop sigue con el próximo ensayo
-desde el mejor commit. Los reintentos internos no consumen ensayos adicionales.
-
-## Resultados
-
-El loop crea una rama `autoresearch/<run_id>` y un worktree separado en
-`experiments/autoresearch/<run_id>/`. Allí guarda:
-
-- `history.jsonl`: hipótesis, SHA, métricas, duración y errores de cada intento.
-- `summary.json`: mejor commit, score y directorio del mejor ensayo.
-- `protocol.json`: configuración y hashes de los archivos fijos.
-- `proposal_NNN.json` y `run_NNN/`: propuestas, logs y artefactos.
-- `data/` y `worktree/`: datos congelados y código de investigación.
-- `executions/`: configuración y estado de cada ejecución, incluidas reanudaciones.
-- `pending.json`: intento en curso, usado para recuperar interrupciones.
-
-El checkout original no cambia. Las propuestas descartadas quedan guardadas,
-aunque Git puede eliminar sus commits sin referencias al hacer garbage collection.
-Para incorporar mejoras, revisar y hacer cherry-pick de los commits aceptados.
-
-Los datos procesados y los artefactos se generan localmente y se ignoran en Git.
-El CSV original se conserva en `data/raw/`. Una ejecución independiente de
-`train.py` guarda sus resultados en `experiments/training/`.
-
-## Empaquetar un candidato para una demostración
-
-```bash
-uv run python scripts/package_model.py <directorio-del-artefacto> experiments/deployment/demo-v1/model.tar.gz
+```text
+configs/                 Datos, entrenamiento y penalizaciones
+src/autoresearch_purchase_propensity/
+  preprocess.py          Limpieza, target y splits
+  history.py             Disponibilidad temporal del pasado
+  features.py            Features editables por AutoResearch
+  modeling.py            Modelo y preprocesamiento editables
+  train.py / evaluate.py  Entrenamiento y métricas protegidos
+  research.py            Loop, proveedores LLM, checkpoints y memoria
+  marketing.py           Umbrales, comparaciones y tracking opcional
+scripts/                 Exportación de predicciones y empaquetado
+inference/               Servidor, dependencias y Dockerfile
+infra/                   Políticas IAM y configuración batch
+tests/                  Pruebas de datos, loop, métricas e inferencia
+docs/                   Arquitectura, protocolos y resultados
 ```
 
-El directorio de entrada contiene `model.joblib`, `code/`, configuración, manifiesto
-y métricas de entrenamiento. El paquete conserva el código de features y del
-modelo, hashes y versiones del entorno de empaquetado. No incluye datasets ni
-credenciales, no reentrena y no sube archivos automáticamente. La salida no se
-sobrescribe y permanece excluida de Git.
-
-Es un artefacto intermedio: todavía necesita el servidor de inferencia y la imagen
-Docker para Batch Transform. Empaquetar no equivale a aprobar el modelo ni acredita
-que sus dependencias coincidan con las originales del entrenamiento.
-
-## Imagen de inferencia
-
-El servidor y el Dockerfile están en [inference/](inference/README.md).
-La imagen `purchase-propensity-inference:demo-v1` se probó localmente con el paquete
-demo-v1. Recibe sesiones procesadas con historia en JSON Lines y devuelve
-probabilidades; la generación de lotes y la historia temporal ocurren antes.
-
-## Evaluación de marketing y MLflow
-
-La selección de modelos conserva log loss. La evaluación posterior permite elegir
-umbrales por penalizaciones simuladas y compararlos con estrategias constantes.
-Ver [protocolo y comandos](docs/evaluation.md) y [diseño del sistema](docs/architecture.md).
-MLflow es opcional (`uv sync --extra tracking`) y registra evaluaciones localmente;
-no cambia el despliegue AWS ni aprueba automáticamente modelos.
+Datos procesados, investigaciones, predicciones, modelos, SQLite, artefactos
+MLflow y materiales personales de aprendizaje quedan fuera de Git. Las tareas
+se gestionan en GitHub Issues. El entrenamiento y AutoResearch siguen manuales;
+no hay reentrenamiento ni aprobación automática en producción.

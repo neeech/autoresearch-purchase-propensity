@@ -61,3 +61,17 @@ historial.
 
 Fuentes: [Tracking](https://mlflow.org/docs/latest/ml/tracking/quickstart/) y
 [SQLite/backend](https://mlflow.org/docs/latest/self-hosting/architecture/backend-store/).
+
+## Recuperar predicciones de entrenamientos anteriores
+
+Para artefactos confiables que aún no exportaban CSV, ejecutar en un proceso nuevo:
+
+```bash
+uv run python scripts/export_validation.py RUTA_AL_ARTEFACTO \
+  --output experiments/evaluation/MI_VERSION/predictions
+```
+
+Carga el modelo con su código original y comprueba el manifest contra los datos
+actuales; no reentrena. Escribe candidato, constante y hashes de procedencia.
+Sólo debe utilizarse con artefactos propios confiables: joblib carga código Python.
+La primera comparación real está en [resultados de mayo](marketing-results.md).
