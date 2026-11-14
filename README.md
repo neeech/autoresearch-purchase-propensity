@@ -1,9 +1,12 @@
 # Purchase Propensity con AutoResearch
 
-Proyecto de Machine Learning que estima la probabilidad de compra asociada a
-una sesión web y explora mejoras del modelo mediante un agente de AutoResearch.
-Incluye evaluación de estrategias de marketing simuladas, seguimiento con MLflow
-y preparación de inferencia batch en AWS.
+Pipeline de Machine Learning para clasificar sesiones web según su probabilidad
+de compra. Incluye preparación temporal de datos, comparación de modelos,
+seguimiento con MLflow y un contenedor de inferencia preparado para AWS.
+
+**Objetivo operativo:** procesar lotes de sesiones nuevas una vez terminadas,
+guardar sus probabilidades y generar un reporte trazable por ejecución. La
+inferencia fue verificada localmente; la ejecución batch en AWS sigue pendiente.
 
 ## El problema
 
@@ -41,8 +44,7 @@ Sesiones → procesamiento e historia → baselines → AutoResearch
 
 1. **Preparación:** normalización de datos, historia por usuario y separación temporal.
 2. **Comparación actual:** tasa de compra constante, LightGBM optimizado con Optuna
-   y AutoResearch independiente desde LightGBM sin tuning. La regresión logística se conserva
-   como antecedente.
+   y AutoResearch independiente desde LightGBM sin tuning. La regresión logística queda disponible como baseline local.
 3. **AutoResearch:** un LLM propone cambios en features y modelos. El controlador
    ejecuta cada experimento y conserva sólo mejoras de **log loss** en validación.
 4. **Evaluación:** se eligen umbrales según penalizaciones simuladas y se comparan
@@ -98,17 +100,18 @@ Para ejecutar las pruebas:
 uv run python -m unittest discover -s tests -v
 ```
 
-## Estado del proyecto
+## Estado operativo
 
-- **Implementado:** procesamiento temporal, baselines, AutoResearch, evaluación
-  de costes simulados, tracking y Model Registry locales con MLflow e inferencia Docker verificada.
-- **AWS preparado:** modelo en S3, imagen en ECR y configuración de IAM y
-  Batch Transform. La primera ejecución no se ha verificado; requiere consultar la cuota vigente.
-- **Próximos pasos:** verificar el batch en AWS, aprobar una versión
-  y automatizar inferencia sobre lotes diarios simulados.
+- Datos, entrenamiento, búsquedas y evaluación temporal implementados.
+- Modelo versionado en MLflow, con código, dependencias y procedencia.
+- Contenedor LightGBM verificado con 64 sesiones; imagen y paquete publicados en
+  ECR y S3, con definición de modelo SageMaker.
+- Pendiente de verificar: primer Batch Transform, procesamiento de lotes nuevos,
+  reporte por ejecución y programación diaria. La cuota limita el ensayo AWS.
 
-El entrenamiento y la aprobación de modelos siguen siendo manuales. Los modelos,
-predicciones y registros locales de MLflow quedan fuera de Git.
+La aprobación del modelo es manual. Pesos, predicciones y estado local de MLflow
+no se distribuyen en Git. La muestra usada para probar el contenedor proviene de
+validación; no representa datos nuevos ni una campaña real.
 
 ## Documentación
 
@@ -119,16 +122,5 @@ predicciones y registros locales de MLflow quedan fuera de Git.
 - [Model Registry y recuperación](docs/model-registry.md)
 - [Comparación de test y candidato](docs/test-results.md)
 - [Resultados de validación](docs/independent-results.md)
-- [Resultados históricos de marketing](docs/marketing-results.md)
 - [Inferencia con Docker](inference/README.md)
 - [Permisos AWS](infra/iam/README.md) y [Batch Transform](infra/batch/README.md)
-
-La comparación actual evalúa **tasa constante, LightGBM con Optuna y AutoResearch
-independiente desde LightGBM sin tuning**. Ver [protocolo y comandos](docs/model-comparison.md).
-La corrida anterior que inició desde Optuna se conserva como
-[antecedente incremental](docs/autoresearch-optuna-results.md), no como una
-comparación independiente de estrategias.
-
-La siguiente metodología propuesta separa AutoResearch para features y Optuna
-para tuning; aún no está implementada. El [protocolo](docs/model-comparison.md)
-distingue este plan de los experimentos ya realizados.

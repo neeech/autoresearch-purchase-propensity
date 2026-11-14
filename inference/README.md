@@ -80,10 +80,8 @@ los faltantes son null. La salida es `{"probability": 0.01}` por fila. Los IDs s
 conservan fuera del modelo para unir resultados por orden. El servidor valida
 esquema y tipo de contenido; no reconstruye historia a partir de datos crudos.
 
-La demostración anterior se verificó localmente con 16 sesiones y coincidencia
-con predicción directa (tolerancia absoluta 1e-12). Esa prueba histórica no acreditaba por sí sola compatibilidad
-del candidato LightGBM ni una ejecución AWS; la comprobación nueva se resume al final. Repetir la prueba con cada versión.
-Los tests del servidor están en [tests/test_inference.py](../tests/test_inference.py).
+Verificar equivalencia con la predicción directa cada vez que cambie el modelo
+o la imagen. Los tests del servidor están en [tests/test_inference.py](../tests/test_inference.py).
 
 Cargar únicamente paquetes confiables: joblib puede ejecutar código Python.
 La imagen no contiene modelo, datos ni credenciales. En AWS SageMaker descarga y

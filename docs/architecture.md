@@ -1,90 +1,88 @@
-# Arquitectura y estado MLOps
+# Arquitectura del pipeline
 
-El sistema clasifica sesiones web terminadas. El entrenamiento y la aprobación
-son manuales; la inferencia diaria por lotes es el objetivo operativo.
+El sistema recibe sesiones web terminadas, construye sus features y produce una
+probabilidad de compra por sesión. Entrenamiento y aprobación son manuales; el
+objetivo operativo es inferencia por lotes diarios con resultados trazables.
+
+## Desarrollo del modelo
 
 ```text
-CSV → normalización + historia temporal → particiones Parquet
-  → entrenamiento / Optuna / AutoResearch
-  → probabilidades → evaluación y umbrales → tracking MLflow
-  → revisión del candidato → paquete versionado
-  → imagen en ECR + modelo en S3 → SageMaker Batch Transform
-  → probabilidades en S3 y logs en CloudWatch
+CSV → validación y normalización → historia de días anteriores → Parquet
+  → entrenamiento / Optuna / AutoResearch → selección en mayo
+  → modelo y umbrales congelados → evaluación temporal en junio
+  → registro MLflow → revisión y empaquetado
 ```
 
-## Componentes implementados
+| Código | Responsabilidad |
+|---|---|
+| preprocess.py / history.py | Datos, target, particiones y pasado disponible |
+| features.py / modeling.py | Features y pipeline de estimación |
+| train.py / evaluate.py | Ajuste en train y métricas probabilísticas |
+| tune.py | Búsqueda de hiperparámetros con Optuna |
+| research.py | Propuestas LLM, ejecución, selección y recuperación Git |
+| marketing.py | Umbrales y penalizaciones simuladas |
+| final_evaluation.py | Test de modelos y umbrales congelados |
 
-| Componente | Responsabilidad | Código |
-|---|---|---|
-| Procesamiento | Esquema, target, faltantes y split temporal | `src/autoresearch_purchase_propensity/preprocess.py` |
-| Historia | Sesiones del mismo usuario de días anteriores | `src/autoresearch_purchase_propensity/history.py` |
-| Features y modelo | Transformaciones y estimador | `features.py`, `modeling.py` del mismo paquete |
-| Entrenamiento | Ajuste sólo en train; métricas y artefactos | `train.py`, `evaluate.py` |
-| Optuna | Búsqueda de hiperparámetros LightGBM | `tune.py` |
-| AutoResearch | Propuestas, evaluación, Git y recuperación | `research.py`, [contrato](../program.md) |
-| Marketing | Umbrales y penalizaciones simuladas | `marketing.py` |
-| Empaquetado | Código, modelo, configuración y hashes | [script](../scripts/package_model.py) |
-| Inferencia HTTP | Contrato SageMaker para el pipeline de demostración | [inference](../inference/README.md) |
+Los módulos están en `src/autoresearch_purchase_propensity/`.
+El [contrato de datos](data-contract.md) define campos, faltantes e historia.
+[Evaluación](evaluation.md) describe enero–abril para train, mayo para validación
+y junio para test. Los resultados están en [test-results.md](test-results.md).
 
-El paquete fuente completo está en `src/autoresearch_purchase_propensity/`.
-[README](../README.md) y [evaluación](evaluation.md) contienen los comandos.
+Optuna y AutoResearch son procesos de desarrollo, no dependencias de inferencia.
+El LLM recibe código, esquema, configuración, métricas e historial; no recibe filas
+del dataset en ese contexto. El contenedor de predicción no necesita una API key LLM.
 
-## Datos, tracking y versiones
+## Registro y artefactos
 
-Train: enero–abril de 2017; validación: mayo; test temporal: junio, sin fit ni
-selección de umbrales. Hay evaluación histórica previa confirmada: ver
-[test-results.md](test-results.md). El target es compra en la sesión; no es respuesta causal a marketing.
-Las transformaciones aprendidas se ajustan sólo en train. La historia excluye el
-mismo día y el futuro. El [EDA](../notebooks/01_eda.ipynb) justifica estas decisiones y el
-[contrato de datos](data-contract.md) centraliza esquema y faltantes.
+MLflow usa SQLite local para metadatos y archivos locales para artefactos. Tracking
+registra ensayos/evaluaciones; Model Registry conserva versiones recuperables con
+su código de features. Ver [guía del registro](model-registry.md).
 
-MLflow local usa SQLite para metadatos y almacenamiento local para artefactos.
-No requiere servidor remoto. Optuna registra ensayos; marketing registra
-selecciones de umbral. El controlador conserva su propio historial JSONL, sin
-registrar automáticamente cada intento en MLflow.
+[configs/candidate.json](../configs/candidate.json) identifica la selección,
+hashes, métricas, umbrales y referencias de registro/despliegue. Su contenido es
+metadato, no pesos. Las rutas históricas apuntan a salidas generadas: un clon no
+incluye modelos entrenados ni el registro poblado. Para reproducir un entrenamiento,
+seguir [el protocolo de comparación](model-comparison.md).
 
-Los resultados agregados están versionados en [test-results.md](test-results.md), con validación separada en
-[independent-results.md](independent-results.md).
-[configs/candidate.json](../configs/candidate.json) identifica el candidato por
-hash, métricas, umbrales y procedencia. Sus rutas de artefactos son referencias
-históricas a archivos generados: no son recursos incluidos en un clon del repositorio.
-El código principal conserva baselines reutilizables; no reemplaza automáticamente
-sus features por las del candidato. Los pesos y el estado MLflow no están versionados.
+[scripts/package_model.py](../scripts/package_model.py) empaqueta el modelo y su
+código original. La configuración declarada, los parámetros efectivos del estimador
+y el snapshot permiten reconstruir qué se evaluó; no se sustituye el baseline del
+código principal automáticamente con un experimento ganador.
 
-## Despliegue y pendientes
+## Inferencia operativa
 
-La infraestructura de demostración usa S3, ECR, IAM, SageMaker Batch Transform y
-CloudWatch. Las configuraciones versionadas son ejemplos ligados a una cuenta;
-no crean recursos automáticamente. Ver [IAM](../infra/iam/README.md) y
-[batch](../infra/batch/README.md).
+```text
+Lote nuevo → validación y preparación con historia disponible → S3
+  → SageMaker Batch Transform [imagen ECR + modelo S3]
+  → probabilidades S3 → reporte del lote
+                      → logs CloudWatch
+```
 
-El servidor admite el baseline sklearn y el candidato LightGBM. La imagen
-local candidate-v2 verificó 64 sesiones por HTTP, con equivalencia de predicciones
-a tolerancia 1e-12, incluyendo historia y duración ausente. Se publicó en ECR como candidate-v2 y se creó una definición SageMaker; no se ejecutó un job.
-El candidato **no está aprobado ni desplegado**: falta revisar las agregaciones
-históricas, ejecutar un job AWS,
-verificar salidas/logs y decidir la aprobación de la versión registrada. La cuota de SageMaker debe consultarse al ejecutar, no asumirse.
+El lote de inferencia no contiene target. Identificadores, fecha del lote, versión
+del modelo y orden se conservan fuera del estimador para vincular cada resultado.
+La historia sólo utiliza días anteriores; las transformaciones se recuperan del
+modelo, sin ajustarlas con el lote nuevo. La normalización debe respetar el
+[contrato de entrada](data-contract.md).
 
-El [Model Registry local](model-registry.md) ya versiona el candidato y conserva
-su código; recuperarlo y registrarlo no aprueba su uso.
-Pendientes posteriores: batches simulados con historia coherente,
-reporte de datos/probabilidades y programación diaria con reintentos controlados.
-No se implementó aún el esquema híbrido de AutoResearch sólo para features y
-Optuna para tuning; está definido como [siguiente metodología](model-comparison.md).
+El [servidor](../inference/README.md) y Docker se verificaron con 64 sesiones de
+validación, incluyendo usuarios con/sin historia y duraciones ausentes. Las
+probabilidades coinciden con la referencia a tolerancia 1e-12. La imagen
+candidate-v2 y el paquete están publicados; su definición SageMaker está en
+[infra/batch](../infra/batch/README.md). Todavía no se ejecutó Batch Transform.
 
-## LLM externo e inferencia en AWS
+IAM limita accesos a S3, ECR y logs. El job usa recursos temporales; un budget no
+es un límite automático de ejecución. Para el primer ensayo se prevé seguimiento
+manual y solicitud de parada si supera 15 minutos, confirmando su finalización.
 
-El LLM participa sólo en AutoResearch. El controlador envía código editable,
-configuración, métricas, esquema e historial de experimentos; no envía filas del
-CSV como parte de ese contexto. Las propuestas se entrenan y evalúan por código
-local. El pipeline de inferencia carga el modelo entrenado: no requiere Gemini,
-Groq ni una API key LLM para producir probabilidades.
+## Trabajo necesario para operar con lotes nuevos
 
-El lugar donde corre el controlador y el proveedor LLM son decisiones separadas:
-el controlador podría ejecutarse en AWS y seguir consultando una API externa.
-Para este proyecto demostrable el controlador manual local es suficiente. Antes
-de usar información confidencial, revisar el contenido enviado y las condiciones
-del proveedor. Gemini distingue uso de datos en servicios gratuitos y pagos;
-no asumir las mismas garantías de privacidad para ambos.
+1. Validar y procesar un lote nuevo sin etiquetas con el mismo esquema e historia.
+2. Guardar probabilidades y un reporte de volumen, faltantes, distribución de scores,
+   versión y duración. Con etiquetas posteriores, agregar métricas predictivas.
+3. Verificar el primer job AWS y el acceso efectivo a archivos/logs.
+4. Aprobar una versión y programar inferencia diaria con control de duplicados,
+   fallos y recuperación de la versión anterior.
 
-Referencia: [condiciones Gemini API](https://ai.google.dev/gemini-api/terms).
+El candidato actual sigue pendiente de aprobación. Las sesiones nuevas permiten
+probar operación; sólo datos etiquetados independientes permiten medir desempeño
+predictivo. Simulaciones y penalizaciones de marketing no prueban impacto comercial.

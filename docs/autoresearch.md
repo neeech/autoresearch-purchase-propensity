@@ -153,8 +153,8 @@ o salidas de una ejecución, no archivos incluidos en Git. Para reproducir desde
 un clon, generar primero datos con preprocess y comenzar una investigación nueva.
 Reanudar exige conservar íntegro el workspace generado y el protocolo compatible.
 Los controles de archivos y hashes no son aislamiento de código Python hostil.
-El modo actual permite editar features y modelos; features-only es una propuesta
-pendiente descrita en [model-comparison.md](model-comparison.md).
+El controlador permite editar únicamente features.py y modeling.py. No se
+permite modificar datos, splits, evaluador ni controlador.
 
 El test temporal de junio de los modelos congelados está documentado en
 [test-results.md](test-results.md). La evaluación local mide calidad; la inferencia

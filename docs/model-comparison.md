@@ -1,4 +1,4 @@
-# Comparación de modelos y siguiente metodología
+# Comparación de modelos
 
 ## Comparación implementada
 
@@ -56,28 +56,3 @@ penalización por errores/oportunidades. Mayo se reutiliza para selección, por 
 que sus métricas son exploratorias. Junio se usa como test temporal de decisiones
 congeladas; la exposición histórica confirmada está documentada en
 [test-results.md](test-results.md).
-
-## Siguiente metodología: features con AutoResearch y tuning con Optuna
-
-**Propuesta, todavía no implementada.** Separar responsabilidades para comparar:
-
-1. Tasa constante de entrenamiento.
-2. LightGBM con columnas originales permitidas y tuning Optuna. La limpieza y
-   codificación necesarias son comunes a todos los modelos.
-3. LightGBM con features propuestas por AutoResearch y tuning Optuna final.
-
-Durante la exploración de features se congelarían estimador e hiperparámetros.
-El agente sólo podría editar el código de features; esa restricción debe aplicarse
-en el controlador, no sólo en el prompt. El controlador actual aún permite
-features.py y modeling.py, por lo que no se debe presentar como modo features-only.
-
-No hace falta tuning completo después de cada propuesta. La estrategia prevista
-es evaluar features con parámetros fijos y retunear pocos finalistas con el mismo
-espacio y presupuesto Optuna que el baseline. Puede descartar features que sólo
-funcionen con otros parámetros; retunear finalistas reduce, pero no elimina, ese
-riesgo. Un tuning por propuesta es posible, pero multiplica los entrenamientos.
-
-Antes de implementarlo, definir validación temporal interna para búsqueda y un
-período posterior para comparar diseños congelados. No llamar independiente a
-una evaluación usada para orientar propuestas. Los resultados actuales se
-conservan y no se reinterpretan como evidencia del esquema híbrido.
