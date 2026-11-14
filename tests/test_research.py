@@ -65,6 +65,35 @@ with (out / 'results.csv').open('w', newline='') as file:
         return {'hypothesis': f'Try {value}',
                 'files': {EDITABLE[1]: f'def build_model(columns, config):\n    return {value}\n'}}
 
+    def test_proposer_receives_active_training_config(self):
+        config = {'data_dir': 'data/processed', 'model': 'lightgbm',
+                  'lightgbm': {'n_estimators': 100, 'learning_rate': .1}}
+        (self.root / 'configs/initial.json').write_text(json.dumps(config))
+        git(self.root, 'add', 'configs/initial.json')
+        git(self.root, 'commit', '-m', 'initial config')
+        contexts = []
+        def proposer(context):
+            contexts.append(json.loads(json.dumps(context)))
+            return {'hypothesis': 'invalid fixture', 'changes': []}
+        run(self.root, self.output, proposer, experiments=1, config_path='configs/initial.json')
+        self.assertEqual(contexts[0]['training_config']['model'], 'lightgbm')
+        self.assertEqual(contexts[0]['training_config']['lightgbm']['n_estimators'], 100)
+        self.assertNotIn('data_dir', contexts[0]['training_config'])
+        self.assertEqual(len(contexts[0]['history']), 1)
+
+    def test_custom_initial_config_is_frozen_for_resume(self):
+        config = {'data_dir': 'data/processed', 'model': 'lightgbm', 'lightgbm': {'num_leaves': 17}}
+        custom = self.root / 'configs/tuned.json'
+        custom.write_text(json.dumps(config))
+        git(self.root, 'add', 'configs/tuned.json')
+        git(self.root, 'commit', '-m', 'tuned config')
+        run(self.root, self.output, lambda context: None, experiments=0, config_path='configs/tuned.json')
+        protocol = json.loads((self.output / 'protocol.json').read_text())
+        self.assertEqual(protocol['config']['lightgbm'], {'num_leaves': 17})
+        run(self.root, self.output, lambda context: None, experiments=0, resume=True,
+            config_path='does-not-exist.json')
+        self.assertEqual(json.loads((self.output / 'protocol.json').read_text()), protocol)
+
     def test_real_commits_keep_discard_tie_failure_and_next_parent(self):
         proposals = [self.proposal(.4), self.proposal(.6), self.proposal(.4),
                      self.proposal("float('nan')"), self.proposal(.3)]
@@ -72,7 +101,7 @@ with (out / 'results.csv').open('w', newline='') as file:
         contexts = []
 
         def proposer(context):
-            contexts.append(context)
+            contexts.append(json.loads(json.dumps(context)))
             return proposals.pop(0)
 
         summary = run(self.root, self.output, proposer, experiments=5, timeout=30)

@@ -23,3 +23,7 @@ experiments/evaluation/
 /mlflow.db*
 /mlruns/
 /mlartifacts/
+
+# Estado local de Jupyter
+.ipynb_checkpoints/
+experiments/optuna/

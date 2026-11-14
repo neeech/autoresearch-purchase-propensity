@@ -1,6 +1,7 @@
 # Autoresearch: propensión de compra
 
-Empezá siempre por baselines: probabilidad constante y regresión logística. El
+Empezá por la referencia constante y el modelo indicado en training_config.
+Puede ser LightGBM inicial o regresión logística; no supongas cuál está activo. El
 loop debe medirlas antes de pedir la primera propuesta. Sólo después investigá
 una hipótesis por ensayo, partiendo del mejor estado confirmado.
 
@@ -17,7 +18,7 @@ con train, dentro del pipeline.
 
 `modeling.py` define `build_model(columns, config)`: devuelve un estimador con
 `fit(X, y)` y `predict_proba(X)`. Conservá las interfaces y usá semilla 42. Empezá
-por el modelo logístico suministrado. Podés cambiarlo después usando dependencias
+por el modelo suministrado en training_config. Podés cambiarlo después usando dependencias
 ya instaladas. Un ensayo que modifica sólo `modeling.py` es válido: podés cambiar
 la familia del estimador, sus hiperparámetros o el preprocesamiento aprendido,
 manteniendo las features actuales.
@@ -88,3 +89,12 @@ Respondé únicamente JSON con esta estructura:
 
 Incluí sólo los archivos que cambies y su contenido completo. Nunca devuelvas
 comandos Git, parches ni modificaciones a otros archivos.
+
+Si la configuración inicial usa LightGBM, `modeling.py` invoca
+`build_native_features(frame)` de `features.py`: ésa es la función activa de
+features. Mantener NaN nativos y categorías compatibles; se puede extender para
+agregar historia previa y otras variables. La configuración del contexto identifica los hiperparámetros iniciales y la
+función activa; no supongas que el modelo procede de Optuna. Buscar mejoras
+sobre el estado recibido, sin modificar el protocolo.
+En esta comparación no uses early stopping ni entrenes transformaciones con
+validación. Mantener presupuesto comparable y registrar todo cambio de estimador.

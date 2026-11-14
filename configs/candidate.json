@@ -1,0 +1,52 @@
+{
+  "status": "candidate_not_approved",
+  "deployment_status": "not_deployed",
+  "research_id": "20261114T175721832207Z",
+  "commit": "1f793b21a471b93f83b03026301b8459daf61c6b",
+  "artifact": "experiments/autoresearch/20261114T175721832207Z/run_009/artifacts/20261114T180443684983Z",
+  "model_sha256": "92ffe5bbe259fa4221dc4bdb4fc1c54f47710d0caadbade106c8d95bc887b507",
+  "validation_data_sha256": {
+    "validation_X.parquet": "ddf03afb6daac457c1e0e42f9db722e00d3f5f90d78a68f0714b8615423c7f77",
+    "validation_y.parquet": "2c39fbadbfa957d41fe6e328ee66445cf2cbd86c59ee85fb379382af3fbcf8f4",
+    "validation_metadata.parquet": "fa17507baae0f7b16e4750530b2ad85c16cf98fc335a4f0a966e06b4da84e684"
+  },
+  "validation_metrics": {
+    "log_loss": 0.032931538966900015,
+    "average_precision": 0.5702754024752257
+  },
+  "thresholds": {
+    "budget": 0.6601699179120266,
+    "balanced": 0.4828006997432711,
+    "opportunities": 0.2750961779114322
+  },
+  "penalties": {
+    "budget": {
+      "tp": 1,
+      "tn": 0,
+      "fp": 10,
+      "fn": 5
+    },
+    "balanced": {
+      "tp": 1,
+      "tn": 0,
+      "fp": 5,
+      "fn": 5
+    },
+    "opportunities": {
+      "tp": 1,
+      "tn": 0,
+      "fp": 5,
+      "fn": 10
+    }
+  },
+  "contact_cost": 1,
+  "evaluation_scope": "May selected models and thresholds; exploratory, not blind test",
+  "limitations": [
+    "Optuna: 20 trials; AutoResearch: 10 proposals plus initial fit",
+    "AutoResearch changed both features and hyperparameters",
+    "Historical averages map missing historical values to zero; review semantics before approval",
+    "demo-v1 inference adapter is not compatible with this LightGBM pipeline without changes"
+  ],
+  "package": "experiments/deployment/candidate-independent-v1/model.tar.gz",
+  "package_sha256": "6af907d74044299b7fd71a6b019ded15710d59fafd9b7bc3b7414fccf1ff55c8"
+}

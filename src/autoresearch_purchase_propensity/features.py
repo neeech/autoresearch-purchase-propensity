@@ -23,3 +23,12 @@ def build_features(frame):
         elif name in LOG_COLUMNS:
             out[name] = np.log1p(out[name].astype(float))
     return out
+
+
+def build_native_features(frame):
+    """Session features for LightGBM: native missing values and categories."""
+    out = frame.drop(columns='history', errors='ignore').copy()
+    for name in CATEGORIES:
+        if name in out:
+            out[name] = out[name].astype('category')
+    return out
