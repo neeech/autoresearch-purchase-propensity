@@ -1,0 +1,113 @@
+{
+  "period": "test-2017-06",
+  "policy": "No fit, tuning, calibration, or threshold selection on June.",
+  "prior_exposure": "Historical June evaluation recorded in Git commit 43bc26a; temporal test, not project-wide blind holdout.",
+  "data_dir": "data/processed",
+  "data_sha256": {
+    "manifest.json": "3dc0d7887f96b2396f055296ff3fa829ea1034a24f784b7efbb49cf7893d48a1",
+    "test_X.parquet": "6a5c6c74dac3b764dd26e71a3d165a312344db3f19ce371a9a836ae107a7d5ac",
+    "test_metadata.parquet": "e30a8369e569d3f9f793eb522a1219445f8b09048eac20cb33ea43ef38806517",
+    "test_y.parquet": "ba81e71a7f786f587b33425cadc334fdb3456897fb288237e7d8af90400cfaa2"
+  },
+  "penalties": {
+    "budget": {
+      "tp": 1,
+      "tn": 0,
+      "fp": 10,
+      "fn": 5
+    },
+    "balanced": {
+      "tp": 1,
+      "tn": 0,
+      "fp": 5,
+      "fn": 5
+    },
+    "opportunities": {
+      "tp": 1,
+      "tn": 0,
+      "fp": 5,
+      "fn": 10
+    }
+  },
+  "contact_cost": 1,
+  "models": [
+    {
+      "name": "constant",
+      "kind": "constant",
+      "artifact": "experiments/optuna/marketing-baseline-v1/training/20261114T164946505026Z",
+      "artifact_sha256": {
+        "model.joblib": "6e953f1855208f55c7aab37e22f590083dfc99319c9fa1df64708b9b536fe50a",
+        "config.json": "f9fb6e229f9009c09278aaf83fb00290c419313dd059ca2e90ddf13af5081533",
+        "constant.json": "3d31e8eaa2e68633f3d9a1cf8e1bf0661780ad54a3445ecaea153056acff9a28",
+        "data_manifest.json": "3dc0d7887f96b2396f055296ff3fa829ea1034a24f784b7efbb49cf7893d48a1",
+        "code/__init__.py": "b5c3f1d0223b9a303b68018890f020f22ccb6fbcc5bbe028bb1bfcda677cd0f7",
+        "code/evaluate.py": "4a1cae83b694bb8aabf68d55ec2c13a68a513cefede28b47758cba612099e4c1",
+        "code/features.py": "d359ba4a5ee1fb707a0fabc19bc6df3b1071020496e3984e390db47c1e4167e0",
+        "code/history.py": "26d215692dc9bf4f4a378e1d10dee34a157ff04a15f4b477fb62f1a16c23785e",
+        "code/marketing.py": "1d0b40b6d6bc4a3b1576016ae75161c00e8e81004b7947dce54172d91ad2f355",
+        "code/modeling.py": "ddd6d24df57434bbb9aad7c605cc1c6c1db6d4374faaa63b1e1f8a34caa4193e",
+        "code/preprocess.py": "1eb8f0e5ccee115e466cf86253cad69a6c8a968e3213f42f8e57a12b536bd854",
+        "code/research.py": "e01ee8063231346233263ca93a39413d23285beb5aed43a06cb0968a1417f091",
+        "code/train.py": "26bdb3c85302ed4290bdaf0fab36d3c5a58b5d6e0b99a605132874fd5995043a",
+        "code/tune.py": "2e6c3d49eede6945d1e43a5eab90239007db68b00c33a473eecd18c44f90bb0b"
+      },
+      "thresholds": {
+        "budget": 1.0000000000000002,
+        "balanced": 1.0000000000000002,
+        "opportunities": 1.0000000000000002
+      }
+    },
+    {
+      "name": "optuna",
+      "kind": "candidate",
+      "artifact": "experiments/optuna/marketing-baseline-v1/training/20261114T164946505026Z",
+      "artifact_sha256": {
+        "model.joblib": "6e953f1855208f55c7aab37e22f590083dfc99319c9fa1df64708b9b536fe50a",
+        "config.json": "f9fb6e229f9009c09278aaf83fb00290c419313dd059ca2e90ddf13af5081533",
+        "constant.json": "3d31e8eaa2e68633f3d9a1cf8e1bf0661780ad54a3445ecaea153056acff9a28",
+        "data_manifest.json": "3dc0d7887f96b2396f055296ff3fa829ea1034a24f784b7efbb49cf7893d48a1",
+        "code/__init__.py": "b5c3f1d0223b9a303b68018890f020f22ccb6fbcc5bbe028bb1bfcda677cd0f7",
+        "code/evaluate.py": "4a1cae83b694bb8aabf68d55ec2c13a68a513cefede28b47758cba612099e4c1",
+        "code/features.py": "d359ba4a5ee1fb707a0fabc19bc6df3b1071020496e3984e390db47c1e4167e0",
+        "code/history.py": "26d215692dc9bf4f4a378e1d10dee34a157ff04a15f4b477fb62f1a16c23785e",
+        "code/marketing.py": "1d0b40b6d6bc4a3b1576016ae75161c00e8e81004b7947dce54172d91ad2f355",
+        "code/modeling.py": "ddd6d24df57434bbb9aad7c605cc1c6c1db6d4374faaa63b1e1f8a34caa4193e",
+        "code/preprocess.py": "1eb8f0e5ccee115e466cf86253cad69a6c8a968e3213f42f8e57a12b536bd854",
+        "code/research.py": "e01ee8063231346233263ca93a39413d23285beb5aed43a06cb0968a1417f091",
+        "code/train.py": "26bdb3c85302ed4290bdaf0fab36d3c5a58b5d6e0b99a605132874fd5995043a",
+        "code/tune.py": "2e6c3d49eede6945d1e43a5eab90239007db68b00c33a473eecd18c44f90bb0b"
+      },
+      "thresholds": {
+        "budget": 0.6319112569498588,
+        "balanced": 0.5470627436777141,
+        "opportunities": 0.266334350894836
+      }
+    },
+    {
+      "name": "autoresearch",
+      "kind": "candidate",
+      "artifact": "experiments/autoresearch/20261114T175721832207Z/run_009/artifacts/20261114T180443684983Z",
+      "artifact_sha256": {
+        "model.joblib": "92ffe5bbe259fa4221dc4bdb4fc1c54f47710d0caadbade106c8d95bc887b507",
+        "config.json": "e49dee21ec887e58048b43850d7d075c1ff1816be086644305dccff16a6849f9",
+        "constant.json": "3d31e8eaa2e68633f3d9a1cf8e1bf0661780ad54a3445ecaea153056acff9a28",
+        "data_manifest.json": "3dc0d7887f96b2396f055296ff3fa829ea1034a24f784b7efbb49cf7893d48a1",
+        "code/__init__.py": "b5c3f1d0223b9a303b68018890f020f22ccb6fbcc5bbe028bb1bfcda677cd0f7",
+        "code/evaluate.py": "4a1cae83b694bb8aabf68d55ec2c13a68a513cefede28b47758cba612099e4c1",
+        "code/features.py": "0fcfcee18ea36376281ae2be870001a7ca4c7e5b8888b790a9031fc6bdf312cf",
+        "code/history.py": "26d215692dc9bf4f4a378e1d10dee34a157ff04a15f4b477fb62f1a16c23785e",
+        "code/marketing.py": "1d0b40b6d6bc4a3b1576016ae75161c00e8e81004b7947dce54172d91ad2f355",
+        "code/modeling.py": "6906079fa4f92a841e4850777246103f1ef165df2ff43f47b73feb7420bb166f",
+        "code/preprocess.py": "1eb8f0e5ccee115e466cf86253cad69a6c8a968e3213f42f8e57a12b536bd854",
+        "code/research.py": "ebe7c910c25f40fc57f2a8e922b65678d68b820706c5b67246412c2b14ab2e7b",
+        "code/train.py": "26bdb3c85302ed4290bdaf0fab36d3c5a58b5d6e0b99a605132874fd5995043a",
+        "code/tune.py": "2e6c3d49eede6945d1e43a5eab90239007db68b00c33a473eecd18c44f90bb0b"
+      },
+      "thresholds": {
+        "budget": 0.6601699179120266,
+        "balanced": 0.4828006997432711,
+        "opportunities": 0.2750961779114322
+      }
+    }
+  ]
+}

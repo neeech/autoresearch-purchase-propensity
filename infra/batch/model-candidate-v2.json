@@ -1,0 +1,8 @@
+{
+  "ModelName": "purchase-propensity-candidate-v2",
+  "ExecutionRoleArn": "arn:aws:iam::407264390138:role/purchase-propensity-batch-role",
+  "PrimaryContainer": {
+    "Image": "407264390138.dkr.ecr.us-east-2.amazonaws.com/purchase-propensity-inference@sha256:ae2e7fc119677e1757e1a34a62459d8e02df94471fe6231757c2bdf813071ebb",
+    "ModelDataUrl": "s3://purchase-propensity-demo-7f4c2a/models/candidate-v2/model.tar.gz"
+  }
+}

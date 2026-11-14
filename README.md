@@ -18,7 +18,8 @@ ni mide el efecto de una campaña de marketing.
 El target es `transactions > 0`, asumiendo cero cuando faltan transacciones.
 La historia utiliza únicamente sesiones de días anteriores. El entrenamiento
 usa enero–abril de 2017 y la validación, mayo. Junio permanece fuera del loop de
-experimentación, aunque ya fue observado y no constituye un test ciego.
+experimentación y se usa como test temporal con modelos y umbrales congelados.
+Una evaluación histórica previa impide considerarlo ciego para todo el proyecto.
 
 El [notebook de análisis exploratorio](notebooks/01_eda.ipynb) presenta la estructura,
 calidad y evolución de los datos, y justifica las principales decisiones.
@@ -49,21 +50,22 @@ Sesiones → procesamiento e historia → baselines → AutoResearch
 5. **Trazabilidad y despliegue:** MLflow registra evaluaciones; Docker, S3, ECR y
    SageMaker permiten preparar la ejecución del modelo por lotes.
 
-## Resultados
+## Resultados de test
 
-Comparación sobre **65.371 sesiones de mayo**, con 1.115 compras:
+Comparación sobre **63.578 sesiones de junio**, con 946 compras. Modelos y
+umbrales seleccionados en mayo y congelados antes de esta evaluación:
 
 | Modelo | Log loss ↓ | Penalización simulada total ↓ |
 |---|---:|---:|
-| Tasa constante | 0,087228 | 11.150 |
-| LightGBM + Optuna | 0,034070 | 8.274 |
-| AutoResearch independiente | **0,032932** | **7.911** |
+| Tasa constante | 0,077659 | 9.460 |
+| LightGBM + Optuna | 0,030528 | 7.382 |
+| AutoResearch independiente | **0,029069** | **6.930** |
 
-AutoResearch mejora log loss un **3,34 %** frente a Optuna. Las búsquedas tuvieron
-presupuestos y libertades diferentes: 20 ensayos de hiperparámetros con Optuna y
-10 propuestas de features/modelos con AutoResearch. Los umbrales se eligieron en
-la misma validación; no son resultados de test independiente ni retorno económico
-real. Ver [comparación y limitaciones](docs/independent-results.md).
+AutoResearch mejora log loss un **4,78 %** frente a Optuna en junio. Las búsquedas
+usaron presupuestos y libertades distintos: 20 ensayos Optuna y 10 propuestas
+AutoResearch. Las penalizaciones son simuladas, no retorno causal de marketing.
+Ver [resultados de test y auditoría de junio](docs/test-results.md) y
+[selección en mayo](docs/independent-results.md).
 
 ## Empezar
 
@@ -99,11 +101,11 @@ uv run python -m unittest discover -s tests -v
 ## Estado del proyecto
 
 - **Implementado:** procesamiento temporal, baselines, AutoResearch, evaluación
-  de costes simulados, tracking local con MLflow e inferencia Docker verificada.
+  de costes simulados, tracking y Model Registry locales con MLflow e inferencia Docker verificada.
 - **AWS preparado:** modelo en S3, imagen en ECR y configuración de IAM y
   Batch Transform. La primera ejecución no se ha verificado; requiere consultar la cuota vigente.
-- **Próximos pasos:** verificar el batch en AWS, registrar versiones de modelos
-  en MLflow y automatizar inferencia sobre lotes diarios simulados.
+- **Próximos pasos:** verificar el batch en AWS, aprobar una versión
+  y automatizar inferencia sobre lotes diarios simulados.
 
 El entrenamiento y la aprobación de modelos siguen siendo manuales. Los modelos,
 predicciones y registros locales de MLflow quedan fuera de Git.
@@ -111,9 +113,12 @@ predicciones y registros locales de MLflow quedan fuera de Git.
 ## Documentación
 
 - [Arquitectura del sistema](docs/architecture.md)
+- [Contrato de datos y faltantes](docs/data-contract.md)
 - [AutoResearch: ejecución, restricciones y recuperación](docs/autoresearch.md)
 - [Evaluación, umbrales y MLflow](docs/evaluation.md)
-- [Comparación actual y candidato](docs/independent-results.md)
+- [Model Registry y recuperación](docs/model-registry.md)
+- [Comparación de test y candidato](docs/test-results.md)
+- [Resultados de validación](docs/independent-results.md)
 - [Resultados históricos de marketing](docs/marketing-results.md)
 - [Inferencia con Docker](inference/README.md)
 - [Permisos AWS](infra/iam/README.md) y [Batch Transform](infra/batch/README.md)

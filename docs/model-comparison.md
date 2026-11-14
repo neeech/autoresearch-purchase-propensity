@@ -53,7 +53,9 @@ Una reproducción genera artefactos nuevos; no descarga pesos históricos.
 Seleccionar umbrales por modelo bajo las mismas penalizaciones, con el procedimiento
 versionado en [evaluation.md](evaluation.md). Distinguir gasto por contactos de
 penalización por errores/oportunidades. Mayo se reutiliza para selección, por lo
-que la evaluación es exploratoria. Junio ya observado no es un test ciego.
+que sus métricas son exploratorias. Junio se usa como test temporal de decisiones
+congeladas; la exposición histórica confirmada está documentada en
+[test-results.md](test-results.md).
 
 ## Siguiente metodología: features con AutoResearch y tuning con Optuna
 

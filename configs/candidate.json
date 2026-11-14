@@ -48,5 +48,55 @@
     "demo-v1 inference adapter is not compatible with this LightGBM pipeline without changes"
   ],
   "package": "experiments/deployment/candidate-independent-v1/model.tar.gz",
-  "package_sha256": "6af907d74044299b7fd71a6b019ded15710d59fafd9b7bc3b7414fccf1ff55c8"
+  "package_sha256": "6af907d74044299b7fd71a6b019ded15710d59fafd9b7bc3b7414fccf1ff55c8",
+  "local_inference": {
+    "status": "passed",
+    "rows": 64,
+    "absolute_tolerance": 1e-12,
+    "max_absolute_difference": 9.280770596475918e-17,
+    "image": "purchase-propensity-inference:candidate-v2",
+    "image_manifest": "sha256:ae2e7fc119677e1757e1a34a62459d8e02df94471fe6231757c2bdf813071ebb",
+    "history_sessions": 32,
+    "missing_duration_sessions": 24
+  },
+  "aws_preparation": {
+    "region": "us-east-2",
+    "model_name": "purchase-propensity-candidate-v2",
+    "image": "407264390138.dkr.ecr.us-east-2.amazonaws.com/purchase-propensity-inference@sha256:ae2e7fc119677e1757e1a34a62459d8e02df94471fe6231757c2bdf813071ebb",
+    "model_data": "s3://purchase-propensity-demo-7f4c2a/models/candidate-v2/model.tar.gz",
+    "input_data": "s3://purchase-propensity-demo-7f4c2a/batches/candidate-v2/smoke.jsonl",
+    "status": "model_definition_created_no_transform_job",
+    "approval": "demonstration_only_not_approved",
+    "quota_last_checked": {
+      "date": "2026-11-14",
+      "ml.m5.large_transform": 0,
+      "request_status": "CASE_OPENED"
+    }
+  },
+  "local_registry": {
+    "name": "purchase-propensity",
+    "version": "1",
+    "uri": "models:/purchase-propensity/1",
+    "alias": "models:/purchase-propensity@candidate",
+    "approval": "pending",
+    "verification": {
+      "rows": 64,
+      "max_absolute_difference": 9.280770596475918e-17,
+      "status": "passed",
+      "absolute_tolerance": 1e-12
+    }
+  },
+  "test_evaluation": {
+    "period": "2017-06",
+    "policy": "Frozen May-selected model and thresholds; no refit",
+    "protocol": "configs/test_evaluation.json",
+    "metrics": {
+      "log_loss": 0.0290686621931631,
+      "average_precision": 0.5507404604902701
+    },
+    "principal_threshold": 0.2750961779114322,
+    "principal_total_penalty": 6930,
+    "contacts": 1132,
+    "prior_exposure": "Historical models evaluated June in Git commit 43bc26a"
+  }
 }

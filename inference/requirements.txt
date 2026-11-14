@@ -4,3 +4,4 @@ scipy==1.18.1
 scikit-learn==1.9.1
 joblib==1.6.0
 gunicorn==23.0.0
+lightgbm==4.7.0
