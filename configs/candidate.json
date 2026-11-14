@@ -72,5 +72,18 @@
       "ml.m5.large_transform": 0,
       "request_status": "CASE_OPENED"
     }
+  },
+  "local_registry": {
+    "name": "purchase-propensity",
+    "version": "1",
+    "uri": "models:/purchase-propensity/1",
+    "alias": "models:/purchase-propensity@candidate",
+    "approval": "pending",
+    "verification": {
+      "rows": 64,
+      "max_absolute_difference": 9.280770596475918e-17,
+      "status": "passed",
+      "absolute_tolerance": 1e-12
+    }
   }
 }

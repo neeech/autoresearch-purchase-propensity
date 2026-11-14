@@ -53,8 +53,9 @@ uv run --extra tracking mlflow ui --backend-store-uri sqlite:///mlflow.db --host
 
 SQLite guarda metadatos; MLflow guarda reportes como artefactos locales. Registra
 identificador del modelo, período, hash del CSV, métricas, costes y umbrales.
-Esto es **tracking de evaluaciones**, todavía no un Model Registry ni aprobación
-de despliegue. No sube datos a AWS ni registra automáticamente cada experimento.
+Este comando hace **tracking de evaluaciones**, sin aprobar ni desplegar.
+El [Model Registry](model-registry.md) es un paso separado, ya implementado para
+versionar candidatos seleccionados. No sube datos a AWS ni registra automáticamente cada experimento.
 Los CSV con etiquetas no se copian a MLflow; se registra su hash. Reportes y estado
 local quedan fuera de Git. No borrar SQLite y artefactos si se desea conservar el
 historial.

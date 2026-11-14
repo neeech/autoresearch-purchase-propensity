@@ -60,9 +60,11 @@ local candidate-v2 verificó 64 sesiones por HTTP, con equivalencia de prediccio
 a tolerancia 1e-12, incluyendo historia y duración ausente. Se publicó en ECR como candidate-v2 y se creó una definición SageMaker; no se ejecutó un job.
 El candidato **no está aprobado ni desplegado**: falta revisar las agregaciones
 históricas, ejecutar un job AWS,
-verificar salidas/logs y registrar la versión aprobada. La cuota de SageMaker debe consultarse al ejecutar, no asumirse.
+verificar salidas/logs y decidir la aprobación de la versión registrada. La cuota de SageMaker debe consultarse al ejecutar, no asumirse.
 
-Pendientes posteriores: Model Registry, batches simulados con historia coherente,
+El [Model Registry local](model-registry.md) ya versiona el candidato y conserva
+su código; recuperarlo y registrarlo no aprueba su uso.
+Pendientes posteriores: batches simulados con historia coherente,
 reporte de datos/probabilidades y programación diaria con reintentos controlados.
 No se implementó aún el esquema híbrido de AutoResearch sólo para features y
 Optuna para tuning; está definido como [siguiente metodología](model-comparison.md).

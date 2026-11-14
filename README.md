@@ -99,11 +99,11 @@ uv run python -m unittest discover -s tests -v
 ## Estado del proyecto
 
 - **Implementado:** procesamiento temporal, baselines, AutoResearch, evaluación
-  de costes simulados, tracking local con MLflow e inferencia Docker verificada.
+  de costes simulados, tracking y Model Registry locales con MLflow e inferencia Docker verificada.
 - **AWS preparado:** modelo en S3, imagen en ECR y configuración de IAM y
   Batch Transform. La primera ejecución no se ha verificado; requiere consultar la cuota vigente.
-- **Próximos pasos:** verificar el batch en AWS, registrar versiones de modelos
-  en MLflow y automatizar inferencia sobre lotes diarios simulados.
+- **Próximos pasos:** verificar el batch en AWS, aprobar una versión
+  y automatizar inferencia sobre lotes diarios simulados.
 
 El entrenamiento y la aprobación de modelos siguen siendo manuales. Los modelos,
 predicciones y registros locales de MLflow quedan fuera de Git.
@@ -113,6 +113,7 @@ predicciones y registros locales de MLflow quedan fuera de Git.
 - [Arquitectura del sistema](docs/architecture.md)
 - [AutoResearch: ejecución, restricciones y recuperación](docs/autoresearch.md)
 - [Evaluación, umbrales y MLflow](docs/evaluation.md)
+- [Model Registry y recuperación](docs/model-registry.md)
 - [Comparación actual y candidato](docs/independent-results.md)
 - [Resultados históricos de marketing](docs/marketing-results.md)
 - [Inferencia con Docker](inference/README.md)
