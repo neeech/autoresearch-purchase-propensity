@@ -155,3 +155,7 @@ Reanudar exige conservar íntegro el workspace generado y el protocolo compatibl
 Los controles de archivos y hashes no son aislamiento de código Python hostil.
 El modo actual permite editar features y modelos; features-only es una propuesta
 pendiente descrita en [model-comparison.md](model-comparison.md).
+
+El test temporal de junio de los modelos congelados está documentado en
+[test-results.md](test-results.md). La evaluación local mide calidad; la inferencia
+AWS verifica ejecución del mismo modelo, sin cambiar splits ni umbrales.

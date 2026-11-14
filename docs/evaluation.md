@@ -1,86 +1,86 @@
-# Evaluación de propensión y simulación de marketing
+# Evaluación: validación y test temporal
 
-AutoResearch sigue minimizando log loss en validación. El umbral se selecciona
-**después** de congelar el modelo; no cambia entrenamiento ni inferencia AWS.
+El objetivo es probabilidad de compra por sesión terminada. [Contrato de datos](data-contract.md).
+La métrica principal es log loss (menor es mejor); Average Precision es secundaria.
 
-Los escenarios de `configs/marketing.json` usan unidades de penalización, no
-importes económicos medidos. Principal: `opportunities` (TP=1, TN=0, FP=5, FN=10).
-FP incluye contacto y desperdicio; FN representa una oportunidad no seleccionada,
-no una venta perdida demostrada. Esta clasificación retrospectiva de sesiones
-terminadas no estima el efecto de descuentos ni predice compras futuras.
+## Separación de decisiones
 
-## Flujo
+| Datos | Uso permitido |
+|---|---|
+| Enero–abril | Ajustar modelo y transformaciones |
+| Mayo | Buscar features/modelos/parámetros y elegir umbrales |
+| Junio | Comparar los modelos congelados, sin reajustarlos |
 
-1. Entrenar con el pipeline existente. Cada entrenamiento nuevo exporta las
-   predicciones de validación del candidato y la referencia constante (tasa de
-   compra de entrenamiento). No se reutilizan probabilidades de otro modelo.
-2. Seleccionar umbrales sólo en validación. La búsqueda considera todas las
-   decisiones distintas, agrupa probabilidades empatadas y, ante costes iguales,
-   prefiere menos contactos. `probability >= threshold` define positivo; un umbral
-   apenas mayor que 1 representa no contactar a nadie.
-3. Comparar coste medio, contactos, precisión y recall con contactar a todos y
-   a nadie. Ejecutar también el comando sobre las predicciones de un baseline
-   sencillo, con el mismo período y costes. Cada modelo elige su propio umbral
-   en validación para una comparación justa.
-4. Congelar los umbrales y aplicarlos a otro período etiquetado. No buscar de
-   nuevo en ese período. Mayo ya se utiliza para seleccionar modelos: sus costes
-   optimizados son descriptivos y pueden ser optimistas. Junio ya observado no
-   debe presentarse como test completamente ciego. Un futuro período intacto
-   dará una evaluación más sólida. No cambiamos los splits existentes.
+Junio es el test temporal del pipeline actual. Hay exposición histórica confirmada:
+el commit Git 43bc26a evaluó modelos anteriores en junio. Eso no convierte junio en
+entrenamiento, pero impide presentarlo como test ciego para todo el proyecto.
+Ver la evidencia y resultados actuales en [test-results.md](test-results.md).
+
+## Umbrales y campaña simulada
+
+[configs/marketing.json](../configs/marketing.json) fija las penalizaciones:
+
+| Escenario | TP | TN | FP | FN |
+|---|---:|---:|---:|---:|
+| budget | 1 | 0 | 10 | 5 |
+| balanced | 1 | 0 | 5 | 5 |
+| opportunities (principal) | 1 | 0 | 5 | 10 |
+
+Seleccionar el umbral en mayo con marketing.py. Para p >= threshold se contacta;
+ante costes iguales se prefieren menos contactos. La constante usa exclusivamente
+la tasa de compra de train y sólo permite seleccionar a todos o a nadie.
+
+Penalización = TP*cTP + TN*cTN + FP*cFP + FN*cFN. Separar gasto directo simulado
+(contactos × coste de contacto) de penalización total. Los adicionales por errores
+no son pagos observados, y la selección retrospectiva no mide ventas incrementales.
+
+## Ejecutar desde artefactos generados
+
+Entrenar con train.py genera un directorio bajo experiments/training. RUN es un
+marcador de ese directorio, no una carpeta que deba existir en un clon:
 
 ```bash
 uv run python -m autoresearch_purchase_propensity.train
-# Sustituir RUN por el directorio de entrenamiento generado.
 uv run python -m autoresearch_purchase_propensity.marketing \
   experiments/training/RUN/candidate_validation_predictions.csv \
   --model-id RUN --period validation-2017-05 \
-  --output experiments/evaluation/RUN-validation
+  --output experiments/evaluation/RUN-validation --mlflow
 ```
 
-CSV de entrada: `session_row_id,target,probability`, una fila por sesión. Conservar
-identificadores al generar predicciones de otro período para poder unir etiquetas
-sin confundir el orden. `--thresholds ruta/thresholds.json` aplica umbrales ya
-seleccionados; el comando nunca carga ni entrena un modelo. El usuario debe
-proveer un período independiente, con las mismas definiciones y el mismo modelo.
+El CSV contiene session_row_id,target,probability. Para recuperar otro modelo
+propio confiable, [export_predictions.py](../scripts/export_predictions.py) carga
+su código original y acepta --split validation o --split test. No reentrena.
+Joblib sólo debe cargar artefactos confiables.
 
-## MLflow local y opcional
+## Test de los tres modelos
+
+[configs/test_evaluation.json](../configs/test_evaluation.json) congela artefactos,
+hashes de datos, penalizaciones y umbrales elegidos en mayo. Se versionó antes de
+calcular las métricas actuales de junio. El módulo final_evaluation verifica los
+hashes, usa el código original de cada modelo y aplica esos umbrales; nunca fit.
 
 ```bash
-uv sync --extra tracking
-# Añadir --mlflow al comando de evaluación anterior.
-uv run --extra tracking mlflow ui --backend-store-uri sqlite:///mlflow.db --host 127.0.0.1
+uv run --extra tracking python -m autoresearch_purchase_propensity.final_evaluation \
+  --output experiments/evaluation/MI_TEST --mlflow
 ```
 
-SQLite guarda metadatos; MLflow guarda reportes como artefactos locales. Registra
-identificador del modelo, período, hash del CSV, métricas, costes y umbrales.
-Este comando hace **tracking de evaluaciones**, sin aprobar ni desplegar.
-El [Model Registry](model-registry.md) es un paso separado, ya implementado para
-versionar candidatos seleccionados. No sube datos a AWS ni registra automáticamente cada experimento.
-Los CSV con etiquetas no se copian a MLflow; se registra su hash. Reportes y estado
-local quedan fuera de Git. No borrar SQLite y artefactos si se desea conservar el
-historial.
+El comando requiere los artefactos propios identificados en el protocolo, que no
+se distribuyen en Git. Para reproducir otra investigación, generar primero sus
+modelos y umbrales y escribir un protocolo nuevo antes de evaluar; no sustituir
+pesos bajo los hashes históricos. La salida debe ser un directorio nuevo.
 
-Fuentes: [Tracking](https://mlflow.org/docs/latest/ml/tracking/quickstart/) y
-[SQLite/backend](https://mlflow.org/docs/latest/self-hosting/architecture/backend-store/).
+Se generan métricas globales, costes por escenario, segmentos con/sin historia,
+probabilidades y procedencia. El comando no optimiza con test ni cambia la selección
+del candidato. Si se usan los resultados para elegir otra versión o features,
+se requiere un período nuevo para una evaluación independiente posterior.
 
-## Recuperar predicciones de entrenamientos anteriores
+## MLflow y AWS
 
-Para artefactos confiables que aún no exportaban CSV, ejecutar en un proceso nuevo:
+Instalar --extra tracking para registrar evaluaciones en MLflow local. SQLite
+guarda metadatos; los reportes quedan como artefactos. Ver
+[Model Registry](model-registry.md) para versionar y recuperar modelos.
 
-```bash
-uv run python scripts/export_predictions.py RUTA_AL_ARTEFACTO \
-  --output experiments/evaluation/MI_VERSION/predictions
-```
-
-Carga el modelo con su código original y comprueba el manifest contra los datos
-actuales; no reentrena. Escribe candidato, constante y hashes de procedencia.
-Sólo debe utilizarse con artefactos propios confiables: joblib carga código Python.
-La comparación actual está en [resultados independientes](independent-results.md).
-Los ejemplos con RUN, MI_VERSION o RUTA_AL_ARTEFACTO son marcadores: deben
-sustituirse por salidas generadas por los comandos de entrenamiento. No son
-archivos distribuidos en el repositorio.
-
-La comparación implementada es constante, LightGBM+Optuna y AutoResearch
-independiente desde LightGBM sin tuning: [protocolo](model-comparison.md). El reporte distingue gasto
-directo simulado (--contact-cost, por defecto 1 por contacto) de penalización
-total; los adicionales por FP/FN no se presentan como desembolsos observados.
+La calidad predictiva puede evaluarse localmente: AWS no es necesario para ello.
+El ensayo batch de 64 sesiones de mayo comprueba equivalencia de despliegue, no
+reemplaza el test. También es posible inferir junio en AWS y evaluar después
+contra sus etiquetas, con los mismos modelos y umbrales congelados.

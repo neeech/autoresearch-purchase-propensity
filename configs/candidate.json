@@ -85,5 +85,18 @@
       "status": "passed",
       "absolute_tolerance": 1e-12
     }
+  },
+  "test_evaluation": {
+    "period": "2017-06",
+    "policy": "Frozen May-selected model and thresholds; no refit",
+    "protocol": "configs/test_evaluation.json",
+    "metrics": {
+      "log_loss": 0.0290686621931631,
+      "average_precision": 0.5507404604902701
+    },
+    "principal_threshold": 0.2750961779114322,
+    "principal_total_penalty": 6930,
+    "contacts": 1132,
+    "prior_exposure": "Historical models evaluated June in Git commit 43bc26a"
   }
 }

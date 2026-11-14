@@ -65,3 +65,7 @@ inferencia diaria. La [rama de inferencia](../inference/README.md) contiene la
 adaptación y configuración; el registro local no ejecuta jobs remotos.
 
 Fuente: [Model Registry workflows](https://mlflow.org/docs/latest/ml/model-registry/workflow/).
+
+El test temporal de junio de los modelos congelados está documentado en
+[test-results.md](test-results.md). La evaluación local mide calidad; la inferencia
+AWS verifica ejecución del mismo modelo, sin cambiar splits ni umbrales.

@@ -1,4 +1,7 @@
-# Cierre: AutoResearch independiente frente a Optuna
+# Validación: AutoResearch independiente frente a Optuna
+
+Este reporte documenta selección y umbrales en mayo. La comparación temporal
+posterior de los modelos congelados está en [test-results.md](test-results.md).
 
 Evaluación retrospectiva sobre 65.371 sesiones de mayo de 2017, 1.115 compras.
 Entrenamiento enero–abril. No se utilizó junio en este cierre. La configuración

@@ -31,17 +31,20 @@ El paquete fuente completo está en `src/autoresearch_purchase_propensity/`.
 
 ## Datos, tracking y versiones
 
-Train: enero–abril de 2017; validación: mayo; junio fuera de las búsquedas y ya
-observado. El target es compra en la sesión; no es respuesta causal a marketing.
+Train: enero–abril de 2017; validación: mayo; test temporal: junio, sin fit ni
+selección de umbrales. Hay evaluación histórica previa confirmada: ver
+[test-results.md](test-results.md). El target es compra en la sesión; no es respuesta causal a marketing.
 Las transformaciones aprendidas se ajustan sólo en train. La historia excluye el
-mismo día y el futuro. El [EDA](../notebooks/01_eda.ipynb) justifica estas decisiones.
+mismo día y el futuro. El [EDA](../notebooks/01_eda.ipynb) justifica estas decisiones y el
+[contrato de datos](data-contract.md) centraliza esquema y faltantes.
 
 MLflow local usa SQLite para metadatos y almacenamiento local para artefactos.
 No requiere servidor remoto. Optuna registra ensayos; marketing registra
 selecciones de umbral. El controlador conserva su propio historial JSONL, sin
 registrar automáticamente cada intento en MLflow.
 
-Los resultados agregados están versionados en [independent-results.md](independent-results.md).
+Los resultados agregados están versionados en [test-results.md](test-results.md), con validación separada en
+[independent-results.md](independent-results.md).
 [configs/candidate.json](../configs/candidate.json) identifica el candidato por
 hash, métricas, umbrales y procedencia. Sus rutas de artefactos son referencias
 históricas a archivos generados: no son recursos incluidos en un clon del repositorio.
