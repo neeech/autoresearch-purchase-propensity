@@ -43,9 +43,14 @@ def run(config):
     with warnings.catch_warnings():
         warnings.simplefilter('error', ConvergenceWarning)
         model.fit(train_x, train_y)
+    predictions = model.predict_proba(val_x)[:, 1]
+    ids = pd.read_parquet(data / 'validation_metadata.parquet').session_row_id
+    for name, values in [('candidate', predictions), ('constant', np.full(len(val_y), probability))]:
+        pd.DataFrame({'session_row_id': ids, 'target': val_y, 'probability': values}).to_csv(
+            out / f'{name}_validation_predictions.csv', index=False)
     results = pd.DataFrame([
         {'model': 'constant', **metrics(val_y, np.full(len(val_y), probability))},
-        {'model': 'candidate', **metrics(val_y, model.predict_proba(val_x)[:, 1])},
+        {'model': 'candidate', **metrics(val_y, predictions)},
     ])
     joblib.dump(model, out / 'model.joblib')
     (out / 'constant.json').write_text(json.dumps({'probability': probability}))

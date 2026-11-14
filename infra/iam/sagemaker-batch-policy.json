@@ -1,0 +1,47 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InspectProjectBucket",
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket", "s3:GetBucketLocation"],
+      "Resource": "arn:aws:s3:::purchase-propensity-demo-7f4c2a"
+    },
+    {
+      "Sid": "ReadModelsAndBatches",
+      "Effect": "Allow",
+      "Action": "s3:GetObject",
+      "Resource": [
+        "arn:aws:s3:::purchase-propensity-demo-7f4c2a/models/*",
+        "arn:aws:s3:::purchase-propensity-demo-7f4c2a/batches/*"
+      ]
+    },
+    {
+      "Sid": "WritePredictions",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:AbortMultipartUpload"],
+      "Resource": "arn:aws:s3:::purchase-propensity-demo-7f4c2a/predictions/*"
+    },
+    {
+      "Sid": "AuthenticateToECR",
+      "Effect": "Allow",
+      "Action": "ecr:GetAuthorizationToken",
+      "Resource": "*"
+    },
+    {
+      "Sid": "PullInferenceImage",
+      "Effect": "Allow",
+      "Action": ["ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer", "ecr:BatchCheckLayerAvailability"],
+      "Resource": "arn:aws:ecr:us-east-2:407264390138:repository/purchase-propensity-inference"
+    },
+    {
+      "Sid": "WriteTransformLogs",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": [
+        "arn:aws:logs:us-east-2:407264390138:log-group:/aws/sagemaker/TransformJobs",
+        "arn:aws:logs:us-east-2:407264390138:log-group:/aws/sagemaker/TransformJobs:*"
+      ]
+    }
+  ]
+}

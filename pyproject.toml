@@ -14,10 +14,16 @@ dependencies = [
     "xgboost>=3.4.1",
     "lightgbm>=4.7.0",
     "catboost>=1.2.10",
+    "boto3[crt]>=1.44.2",
 ]
 
 [project.scripts]
 autoresearch = "autoresearch_purchase_propensity.research:main"
+
+[project.optional-dependencies]
+tracking = [
+    "mlflow>=3.18.0",
+]
 
 [build-system]
 requires = ["uv_build>=0.12.15,<0.13.0"]
