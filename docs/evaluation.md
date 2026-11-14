@@ -74,9 +74,12 @@ uv run python scripts/export_validation.py RUTA_AL_ARTEFACTO \
 Carga el modelo con su código original y comprueba el manifest contra los datos
 actuales; no reentrena. Escribe candidato, constante y hashes de procedencia.
 Sólo debe utilizarse con artefactos propios confiables: joblib carga código Python.
-La primera comparación real está en [resultados de mayo](marketing-results.md).
+La comparación actual está en [resultados independientes](independent-results.md).
+Los ejemplos con RUN, MI_VERSION o RUTA_AL_ARTEFACTO son marcadores: deben
+sustituirse por salidas generadas por los comandos de entrenamiento. No son
+archivos distribuidos en el repositorio.
 
-La comparación vigente es constante, LightGBM+Optuna y AutoResearch desde el
-ganador de Optuna: [protocolo](model-comparison.md). El reporte distingue gasto
+La comparación implementada es constante, LightGBM+Optuna y AutoResearch
+independiente desde LightGBM sin tuning: [protocolo](model-comparison.md). El reporte distingue gasto
 directo simulado (--contact-cost, por defecto 1 por contacto) de penalización
 total; los adicionales por FP/FN no se presentan como desembolsos observados.

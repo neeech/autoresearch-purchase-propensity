@@ -42,7 +42,8 @@ budget, Optuna obtiene un resultado ligeramente mejor.
 Presupuesto solicitado: 20 propuestas, timeout de entrenamiento 180 s, máximo
 10 llamadas por minuto. Se completaron 13 propuestas entrenadas: 3 keep y 10
 discard. El intento 14 no entrenó: Gemini informó cuota diaria agotada. El baseline
-es la ejecución 0. La corrida es reanudable, no se completaron los 20 ensayos.
+es la ejecución 0. No se completaron los 20 ensayos. Reanudar requiere conservar su workspace
+y protocolo originales; no se presupone que estén disponibles en otro clon.
 
 Mejoras aceptadas: (1) conteos/compras/recencias históricas; (4) tasas de compra,
 ventanas temporales y promedios de actividad histórica; (12) diferencia entre hits
@@ -58,7 +59,8 @@ la explicación del LLM.
 - Mejor commit: `5d0f01f59f641b927b3f0f523d2e52169c1d8cf2`, experimento 12.
 - Predicciones reproducidas en un proceso nuevo con el snapshot original; evaluación
   registrada en MLflow, experimento `purchase-propensity-marketing`.
-- Resultados locales: `experiments/evaluation/autoresearch-optuna-v1/`.
+- Este reporte conserva resultados agregados; los pesos, workspaces y registros
+  MLflow de esa ejecución no se distribuyen con el repositorio.
 - Se mantiene un warning de división por cero en agregaciones históricas; las
   probabilidades y métricas finales son finitas. Revisarlo antes de aprobación.
 - Mayo se utilizó para tuning, selección y umbrales: evaluación exploratoria,

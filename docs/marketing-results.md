@@ -1,4 +1,7 @@
-# Comparación retrospectiva de marketing — mayo de 2017
+# Antecedente: regresión logística e HistGradientBoosting
+
+La comparación actual se documenta en [independent-results.md](independent-results.md).
+Este reporte conserva un experimento anterior, con estimadores y protocolo distintos.
 
 Evaluación realizada el 13/11/2026. Sin reentrenar ni utilizar junio. Se recuperó cada modelo con su snapshot original de features y se reprodujeron log loss y Average Precision guardados en sus entrenamientos.
 
@@ -29,10 +32,6 @@ El candidato reduce el coste principal 7.23% frente a regresión logística y 27
 - TP/FP describen selección retrospectiva; no se midió respuesta a una campaña ni compras futuras.
 - Candidato: commit `0a29149a136fe2fb3ee193f69df39f2a02cd676b`, run_005. Baseline logístico: run_000 de la misma investigación `20261027T193002594365Z`.
 - El candidato conserva early stopping y un warning conocido al dividir historia vacía. Se reprodujeron probabilidades finitas y métricas, pero sigue sin aprobación final.
-- Resultados detallados, hashes de modelo/datos y predicciones: `experiments/evaluation/marketing-v1/` (local, ignorado).
+- Este documento conserva resultados agregados. Los pesos y registros locales
+  de esta investigación no están distribuidos en Git; no se necesitan para leer el reporte.
 - MLflow local registra estas evaluaciones como no aprobadas; todavía no registra un modelo desplegable en Model Registry.
-
-Runs MLflow:
-- `constant-run000`: `19ff9e0dbfc640c48c2250db4cf7c33a`
-- `0a29149a-run005`: `90cb63aa203d48459f9d7f5d7374b3f5`
-- `logistic-run000`: `409d0a2cbdbb4f1790f66e82b11ae41d`

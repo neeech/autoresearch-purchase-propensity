@@ -49,10 +49,14 @@ coste monetario de llamadas API; el tiempo del controlador incluye LLM y entrena
   `1f793b21a471b93f83b03026301b8459daf61c6b`, experimento 9.
 - Selección versionada: [configs/candidate.json](../configs/candidate.json), con
   SHA del modelo, hashes de validación, métricas, umbrales y penalizaciones.
-- Artefactos locales: `experiments/evaluation/independent-v1/`; incluye predicciones,
-  costes, umbrales, procedencia y métricas de usuarios con/sin historia.
-- Evaluación y procedencia registradas en MLflow local. El paquete de demostración
-  queda en `experiments/deployment/candidate-independent-v1/model.tar.gz`.
+- La evaluación incluyó usuarios con y sin historia. Log loss sin historia:
+  constante 0,062313; Optuna 0,025760; AutoResearch 0,025314. Con historia:
+  constante 0,196287; Optuna 0,070447; AutoResearch 0,066274.
+- Se registraron evaluación, procedencia y paquete en MLflow local. Ese estado y
+  los pesos no se distribuyen en Git; este documento contiene los resultados
+  agregados y candidate.json los metadatos de selección. Para generar otros
+  artefactos, ejecutar [el protocolo](model-comparison.md), no asumir que las
+  rutas históricas existen en otro clon.
 - Estado: **candidato no aprobado, no desplegado**. No se sobrescribió demo-v1.
   La imagen existente necesita adaptar el servidor y sus dependencias para este
   pipeline LightGBM. Empaquetado no equivale a compatibilidad de inferencia verificada.

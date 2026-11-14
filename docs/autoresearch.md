@@ -100,7 +100,8 @@ otros límites y fallos transitorios conservan los reintentos habituales.
 | `research.py` | Propuestas, commits, comparación y registro | No |
 | `program.md` | Instrucciones del agente | No |
 
-Train: enero–abril de 2017. Validation: mayo. Test: junio, fuera del loop.
+Train: enero–abril de 2017. Validation: mayo. Junio fuera del loop; ya observado,
+no constituye un test completamente ciego.
 El target es `transactions > 0`; transacciones vacías se interpretan como cero.
 
 Cada fila recibe `history`, una lista de sesiones del mismo usuario de días
@@ -109,7 +110,9 @@ promedios, ventanas u otras agregaciones en `features.py`, preservando filas
 y orden. Debe convertir esa lista en variables escalares y quitarla antes del
 estimador. Las transformaciones aprendidas se ajustan únicamente en train.
 
-Primero se miden las baselines constante y logística usando la sesión actual.
+Primero se mide la referencia constante y el modelo indicado por --config.
+Por defecto es regresión logística; configs/lightgbm_initial.json selecciona
+LightGBM sin tuning. El agente recibe la configuración activa.
 Después, el prompt pide investigar el aporte del historial. Cada candidato
 se commitea y se evalúa en un intérprete nuevo. Sólo se conserva una mejora
 estricta; empates, errores y timeouts vuelven al mejor commit.
@@ -142,3 +145,13 @@ Los datos procesados y los artefactos se generan localmente y se ignoran en Git.
 El CSV original se conserva en `data/raw/`. Una ejecución independiente de
 `train.py` guarda sus resultados en `experiments/training/`.
 
+
+## Alcance y requisitos locales
+
+Los nombres propuestas.json y run_id de los ejemplos son entradas del usuario
+o salidas de una ejecución, no archivos incluidos en Git. Para reproducir desde
+un clon, generar primero datos con preprocess y comenzar una investigación nueva.
+Reanudar exige conservar íntegro el workspace generado y el protocolo compatible.
+Los controles de archivos y hashes no son aislamiento de código Python hostil.
+El modo actual permite editar features y modelos; features-only es una propuesta
+pendiente descrita en [model-comparison.md](model-comparison.md).

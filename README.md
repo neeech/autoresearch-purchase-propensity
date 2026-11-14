@@ -40,7 +40,7 @@ Sesiones → procesamiento e historia → baselines → AutoResearch
 
 1. **Preparación:** normalización de datos, historia por usuario y separación temporal.
 2. **Comparación actual:** tasa de compra constante, LightGBM optimizado con Optuna
-   y AutoResearch iniciado desde esa referencia. La regresión logística se conserva
+   y AutoResearch independiente desde LightGBM sin tuning. La regresión logística se conserva
    como antecedente.
 3. **AutoResearch:** un LLM propone cambios en features y modelos. El controlador
    ejecuta cada experimento y conserva sólo mejoras de **log loss** en validación.
@@ -86,7 +86,8 @@ uv run autoresearch --experiments 10 --timeout 180 --rpm 10
 Cada investigación conserva hipótesis, cambios, métricas y errores en un workspace
 separado. Por defecto el código comienza con regresión logística; para repetir la
 comparación independiente usar `--config configs/lightgbm_initial.json`. El
-candidato seleccionado se conserva en los artefactos de su investigación.
+candidato seleccionado queda identificado en `configs/candidate.json`. Los
+artefactos de investigación se generan localmente; no se descargan con el repositorio.
 Ver [configuración y reanudación de AutoResearch](docs/autoresearch.md).
 
 Para ejecutar las pruebas:
@@ -100,7 +101,7 @@ uv run python -m unittest discover -s tests -v
 - **Implementado:** procesamiento temporal, baselines, AutoResearch, evaluación
   de costes simulados, tracking local con MLflow e inferencia Docker verificada.
 - **AWS preparado:** modelo en S3, imagen en ECR y configuración de IAM y
-  Batch Transform. La primera ejecución sigue pendiente de aprobación de cuota.
+  Batch Transform. La primera ejecución no se ha verificado; requiere consultar la cuota vigente.
 - **Próximos pasos:** verificar el batch en AWS, registrar versiones de modelos
   en MLflow y automatizar inferencia sobre lotes diarios simulados.
 
@@ -122,3 +123,7 @@ independiente desde LightGBM sin tuning**. Ver [protocolo y comandos](docs/model
 La corrida anterior que inició desde Optuna se conserva como
 [antecedente incremental](docs/autoresearch-optuna-results.md), no como una
 comparación independiente de estrategias.
+
+La siguiente metodología propuesta separa AutoResearch para features y Optuna
+para tuning; aún no está implementada. El [protocolo](docs/model-comparison.md)
+distingue este plan de los experimentos ya realizados.

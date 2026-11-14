@@ -1,22 +1,60 @@
-# Inferencia de demostración
+# Servidor de inferencia de demostración
 
-Servidor WSGI con Gunicorn para el pipeline sklearn de demo-v1. No entrena.
-El contrato de SageMaker requiere puerto 8080, `GET /ping` y `POST /invocations`:
-https://docs.aws.amazon.com/sagemaker/latest/dg/your-algorithms-batch-code.html
+[server.py](server.py) implementa WSGI con Gunicorn y el contrato HTTP de
+SageMaker: puerto 8080, GET /ping y POST /invocations. Recibe JSON Lines y
+responde una probabilidad por línea, conservando el orden. No entrena modelos.
 
-## Construcción y ejecución local
+**Compatibilidad:** el adaptador actual requiere un pipeline sklearn con una
+etapa `features` que contenga la selección numérica ajustada. El baseline
+logístico de train.py cumple ese contrato. El candidato LightGBM seleccionado
+no lo cumple: requiere adaptación antes de usar este servidor.
 
-Desde la raíz del repositorio:
+## Preparar los archivos desde un clon
+
+Desde la raíz, generar datos y un entrenamiento logístico:
+
+```bash
+uv sync
+uv run python -m autoresearch_purchase_propensity.preprocess
+uv run python -m autoresearch_purchase_propensity.train
+```
+
+El entrenamiento imprime resultados y genera un directorio bajo
+experiments/training. Sustituir RUN por ese directorio; no es un archivo incluido
+en Git. Crear un paquete nuevo:
+
+```bash
+uv run python scripts/package_model.py experiments/training/RUN \
+  experiments/deployment/local/model.tar.gz
+mkdir -p experiments/deployment/local/model
+tar -xzf experiments/deployment/local/model.tar.gz -C experiments/deployment/local/model
+```
+
+Generar una muestra de validación a partir de los datos procesados:
+
+```bash
+uv run python - <<'PY'
+from pathlib import Path
+import pandas as pd
+frame = pd.read_parquet('data/processed/validation_X.parquet').drop(columns='month').head(16)
+Path('experiments/deployment/local/sample.jsonl').write_text(
+    frame.to_json(orient='records', lines=True, double_precision=15))
+PY
+```
+
+Estos archivos son salidas locales de los comandos, no recursos descargados.
+El paquete conserva features/modelo, configuración, métricas y hashes; las
+versiones de dependencias corresponden al entorno de empaquetado.
+
+## Construir y probar
 
 ```bash
 docker buildx build --platform linux/amd64 --provenance=false --sbom=false \
   --output type=docker,oci-mediatypes=false \
-  -t purchase-propensity-inference:demo-v1 inference
-mkdir -p experiments/deployment/demo-v1/model
-tar -xzf experiments/deployment/demo-v1/model.tar.gz -C experiments/deployment/demo-v1/model
+  -t purchase-propensity-inference:local inference
 docker run --rm --name purchase-propensity-local -p 127.0.0.1:8080:8080 \
-  --mount "type=bind,src=$PWD/experiments/deployment/demo-v1/model,dst=/opt/ml/model,readonly" \
-  purchase-propensity-inference:demo-v1 serve
+  --mount "type=bind,src=$PWD/experiments/deployment/local/model,dst=/opt/ml/model,readonly" \
+  purchase-propensity-inference:local serve
 ```
 
 En otra terminal:
@@ -25,47 +63,27 @@ En otra terminal:
 curl --fail http://localhost:8080/ping
 curl --fail http://localhost:8080/invocations \
   -H 'Content-Type: application/jsonlines' \
-  --data-binary @experiments/deployment/demo-v1/sample.jsonl
+  --data-binary @experiments/deployment/local/sample.jsonl
+docker stop purchase-propensity-local
 ```
 
-`sample.jsonl` es la muestra local de verificación generada en esta sesión; no está
-versionada. Para otras instalaciones preparar filas con el contrato siguiente.
-Detener con Ctrl+C o `docker stop purchase-propensity-local`.
+No son comandos de publicación ni crean recursos AWS. La exportación Docker de
+una sola plataforma evita el índice OCI con attestations para la compatibilidad
+del despliegue preparado. Revisar imagen/dependencias al cambiar de modelo.
 
-## Contrato
+## Contrato y verificación
 
-Una sesión por línea JSON, con todas las columnas de `data_manifest.json.features`
-excepto `month`, y sin columnas extra. `history` es una lista de sesiones previas;
-para usuarios nuevos es `[]`. Los faltantes se representan con `null`.
-Las columnas numéricas originales se recuperan de la selección numérica ajustada
-del pipeline. Esto evita tratarlas como categorías cuando un minilote sólo contiene
-faltantes. Este adaptador es específico del pipeline sklearn de demostración;
-un candidato con otra estructura requiere revisar el adaptador y dependencias.
+Cada entrada contiene las columnas del manifiesto generado por preprocess,
+excepto month, sin target ni IDs. history es una lista (vacía para usuarios nuevos);
+los faltantes son null. La salida es `{"probability": 0.01}` por fila. Los IDs se
+conservan fuera del modelo para unir resultados por orden. El servidor valida
+esquema y tipo de contenido; no reconstruye historia a partir de datos crudos.
 
-La salida contiene una línea `{"probability": 0.01}` por sesión, en el mismo orden.
-Los IDs se conservan aparte: no entran al modelo. En Batch Transform se utilizarán
-`ContentType=application/jsonlines`, `SplitType=Line`, `AssembleWith=Line`,
-`BatchStrategy=MultiRecord`, `MaxConcurrentTransforms=1` y `MaxPayloadInMB=6`.
+La demostración anterior se verificó localmente con 16 sesiones y coincidencia
+con predicción directa (tolerancia absoluta 1e-12). Eso no acredita compatibilidad
+del nuevo candidato ni una ejecución AWS. Repetir la prueba con cada versión.
+Los tests del servidor están en [tests/test_inference.py](../tests/test_inference.py).
 
-SageMaker descarga y descomprime el paquete de S3 en `/opt/ml/model`. La imagen
-contiene servidor y dependencias; no contiene modelo, datos ni credenciales.
-El código de features se carga desde el paquete del modelo. Cargar únicamente
-paquetes propios y confiables: joblib carga objetos Python ejecutables.
-
-## Verificación realizada
-
-- 47 tests del proyecto, incluidos tres del servidor: correctos.
-- Imagen construida y servidor HTTP ejecutado localmente en un contenedor sin red externa.
-- `/ping`: 200 y cuerpo vacío.
-- 16 sesiones de mayo (8 con historia): probabilidades iguales al modelo local,
-  tolerancia absoluta 1e-12 y orden conservado.
-- Esquema inválido: 400; tipo de contenido incorrecto: 415.
-- Contenedor temporal detenido; no se publicó en ECR ni se ejecutó un job AWS.
-
-La muestra está en `experiments/deployment/demo-v1/sample.jsonl`. No se utilizó junio.
-El candidato conserva sus limitaciones conocidas: early stopping y warning de
-una división histórica. No constituye un modelo final aprobado.
-
-La exportación usa un manifiesto Docker de una sola plataforma, sin el índice OCI
-que BuildKit agrega al incluir attestations. Esto evita incompatibilidades de
-formato de imagen al crear el modelo en SageMaker. No cambia el paquete del modelo.
+Cargar únicamente paquetes confiables: joblib puede ejecutar código Python.
+La imagen no contiene modelo, datos ni credenciales. En AWS SageMaker descarga y
+descomprime el modelo en /opt/ml/model. Ver [configuración batch](../infra/batch/README.md).

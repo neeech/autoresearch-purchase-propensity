@@ -1,92 +1,81 @@
-# Comparación independiente: Optuna y AutoResearch
+# Comparación de modelos y siguiente metodología
 
-## Objetivo
+## Comparación implementada
 
-Comparar tres soluciones con los mismos datos y evaluación temporal:
+Se compararon tasa constante, LightGBM con Optuna y AutoResearch independiente.
+La referencia constante usa la tasa de compra de train; Optuna optimiza parámetros
+con features de sesión fijas; el agente puede modificar features y modelos.
 
-1. **Constante:** tasa de compra de enero–abril.
-2. **LightGBM + Optuna:** búsqueda de hiperparámetros con features de sesión fijas.
-3. **AutoResearch independiente:** inicia con `configs/lightgbm_initial.json`,
-   sin parámetros ganadores ni historial de Optuna. Puede modificar features,
-   historia, modelos e hiperparámetros dentro de los permisos existentes.
+| Condición | Optuna | AutoResearch independiente |
+|---|---|---|
+| Entrenamiento | Enero–abril de 2017 | Enero–abril de 2017 |
+| Validación/objetivo | Mayo / minimizar log loss | Mayo / minimizar log loss |
+| Presupuesto ejecutado | 20 ensayos | 10 propuestas + entrenamiento inicial |
+| Punto de partida | Espacio LightGBM predefinido | [LightGBM inicial](../configs/lightgbm_initial.json) |
+| Libertad | Hiperparámetros | Features, estimador e hiperparámetros |
 
-Es una comparación de estrategias completas, no sólo de optimizadores: el agente
-puede hacer ingeniería de features y cambiar de estimador; Optuna usa el espacio
-LightGBM predefinido. El punto inicial del agente usa valores convencionales
-explícitos (100 árboles, learning_rate 0.1, 31 hojas), no un resultado de tuning.
-El modelo inicial sólo sirve como punto de partida; no es una cuarta búsqueda.
+Semilla 42; CPU local; LightGBM con 4 threads, sin early stopping en esta
+comparación. Se verificaron hashes iguales de datos y alineación de sesiones.
+Los presupuestos no son equivalentes: los resultados no prueban superioridad
+universal de un optimizador. Ver [resultados](independent-results.md).
+La [investigación incremental anterior](autoresearch-optuna-results.md) comenzó
+desde el ganador de Optuna y es un antecedente distinto.
 
-## Protocolo fijo
+## Reproducir una búsqueda desde el repositorio
 
-- Train: enero–abril de 2017. Validation: mayo. Junio fuera de ambas búsquedas.
-- Historia: únicamente días estrictamente anteriores a cada sesión; nunca futuro.
-- Log loss como objetivo; Average Precision como métrica complementaria.
-- Semilla 42, CPU local, LightGBM con 4 threads. Sin early stopping ni pruning.
-- Optuna: 20 ensayos entrenados; AutoResearch: hasta 20 propuestas, más medición
-  inicial. Registrar propuestas fallidas, entrenamientos efectivos y tiempos;
-  iguales cantidades solicitadas no implican igual cómputo.
-- Misma política de faltantes: LightGBM inicial trata NaN y categorías nativamente.
-- El agente recibe configuración activa, código editable y sólo el historial de
-  su nueva investigación. No recibe resultados de otras investigaciones.
-
-Mayo se reutiliza para tuning y selección de umbrales: resultados exploratorios,
-potencialmente optimistas. Junio ya observado no es un test completamente ciego;
-confirmar generalización requerirá un período independiente. No modificar splits.
-
-## Ejecutar
+Desde la raíz, generar primero las particiones:
 
 ```bash
 uv sync --extra tuning --extra tracking
+uv run python -m autoresearch_purchase_propensity.preprocess
 uv run --extra tuning --extra tracking python -m autoresearch_purchase_propensity.tune \
-  --trials 20 --output experiments/optuna/MI_ESTUDIO --mlflow
+  --trials 20 --output experiments/optuna/reproduction --mlflow
 ```
 
-La referencia Optuna existente `marketing-baseline-v1` completó 20 ensayos y obtuvo
-log loss 0,03407013. Conserva artefactos, datos congelados, parámetros y tiempos.
-No hace falta repetirla si los hashes de datos y la preparación siguen iguales.
+El directorio de salida debe ser nuevo. Los archivos de estudio, modelos y
+predicciones se **generan con el comando** y no están incluidos en Git.
 
-Con GEMINI_API_KEY configurada y checkout limpio, iniciar **una investigación nueva**:
+Para AutoResearch independiente, configurar GEMINI_API_KEY en el entorno y
+comenzar con checkout limpio:
 
 ```bash
 uv run autoresearch --provider gemini --model gemini-3.6-flash \
-  --config configs/lightgbm_initial.json \
-  --experiments 20 --timeout 180 --rpm 10
+  --config configs/lightgbm_initial.json --experiments 10 --timeout 180 --rpm 10
 ```
 
-No usar `--resume` ni `best_config.json`. El identificador y la rama se generan
-automáticamente. Primero se mide el modelo inicial; después se conserva sólo una
-mejora estricta. Las cuotas y disponibilidad del modelo dependen del proveedor;
-revisar el error si se detiene. Una clave nueva puede compartir cuota con otras.
+El modelo del proveedor debe estar disponible para la cuenta. El controlador crea
+un workspace nuevo; no usar --resume para una comparación independiente. El
+baseline comienza sin tuning de Optuna. Ver [opciones y recuperación](autoresearch.md).
+Una reproducción genera artefactos nuevos; no descarga pesos históricos.
 
-## Estado de las investigaciones
+## Evaluación común
 
-| Investigación | Origen | Resultado | Uso |
-|---|---|---|---|
-| Optuna marketing-baseline-v1 | Espacio LightGBM definido | 0,03407013 | Referencia independiente |
-| AutoResearch 20261114T172825124860Z | Ganador de Optuna | 0,03321754 | Antecedente incremental; no comparación independiente |
-| AutoResearch 20261114T175721832207Z | lightgbm_initial.json | 0,03293154 | Comparación independiente, 10 propuestas |
+Seleccionar umbrales por modelo bajo las mismas penalizaciones, con el procedimiento
+versionado en [evaluation.md](evaluation.md). Distinguir gasto por contactos de
+penalización por errores/oportunidades. Mayo se reutiliza para selección, por lo
+que la evaluación es exploratoria. Junio ya observado no es un test ciego.
 
-La corrida anterior no se altera. Ver [resultados incrementales](autoresearch-optuna-results.md).
-El mejor código permanece en su workspace, no se copia al baseline inicial.
+## Siguiente metodología: features con AutoResearch y tuning con Optuna
 
-## Evaluación y MLOps
+**Propuesta, todavía no implementada.** Separar responsabilidades para comparar:
 
-Recuperar cada modelo con su snapshot original y comparar predicciones sobre las
-mismas filas. Elegir umbral por modelo en mayo con los escenarios de marketing;
-congelarlo antes de evaluar otro período. La constante sólo permite contactar a
-todos o a nadie. Registrar métricas, umbrales, hashes y reportes en MLflow local.
+1. Tasa constante de entrenamiento.
+2. LightGBM con columnas originales permitidas y tuning Optuna. La limpieza y
+   codificación necesarias son comunes a todos los modelos.
+3. LightGBM con features propuestas por AutoResearch y tuning Optuna final.
 
-Separar contacts, direct_spend (1 unidad simulada por contacto, configurable) y
-total_penalty. FP/FN incluyen penalizaciones hipotéticas; no presentar su reducción
-como dinero ahorrado ni efecto causal de marketing. La clasificación es retrospectiva
-sobre sesiones terminadas, no una predicción de compras futuras por una campaña.
+Durante la exploración de features se congelarían estimador e hiperparámetros.
+El agente sólo podría editar el código de features; esa restricción debe aplicarse
+en el controlador, no sólo en el prompt. El controlador actual aún permite
+features.py y modeling.py, por lo que no se debe presentar como modo features-only.
 
-Después de revisión y aprobación: empaquetar una nueva versión, adaptar y probar
-la imagen de inferencia antes de subirla a ECR/S3. No sobrescribir demo-v1: su
-servidor asume el pipeline anterior. AWS y el Model Registry siguen pendientes.
+No hace falta tuning completo después de cada propuesta. La estrategia prevista
+es evaluar features con parámetros fijos y retunear pocos finalistas con el mismo
+espacio y presupuesto Optuna que el baseline. Puede descartar features que sólo
+funcionen con otros parámetros; retunear finalistas reduce, pero no elimina, ese
+riesgo. Un tuning por propuesta es posible, pero multiplica los entrenamientos.
 
-## Cierre de la comparación
-
-La corrida independiente completó 10 propuestas, no las 20 sugeridas en el
-ejemplo. Ver [resultados y estado MLOps](independent-results.md). El candidato
-queda identificado en configs/candidate.json, todavía sin aprobación/despliegue.
+Antes de implementarlo, definir validación temporal interna para búsqueda y un
+período posterior para comparar diseños congelados. No llamar independiente a
+una evaluación usada para orientar propuestas. Los resultados actuales se
+conservan y no se reinterpretan como evidencia del esquema híbrido.
